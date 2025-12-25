@@ -1,0 +1,318 @@
+// CompeteIQ Database Schema
+// Compatible with PostgreSQL (Vercel Postgres)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ENUMS
+enum AnalysisStatus {
+  processing
+  completed
+  failed
+}
+
+enum CompetitorType {
+  direct
+  indirect
+}
+
+enum MVPPriority {
+  P0
+  P1
+  P2
+}
+
+enum EntityType {
+  user_app
+  competitor
+}
+
+enum GapType {
+  deficit
+  standout
+}
+
+enum GapSeverity {
+  critical
+  high
+  medium
+  low
+}
+
+enum OpportunityLevel {
+  low
+  medium
+  high
+  very_high
+}
+
+enum DifficultyLevel {
+  easy
+  moderate
+  hard
+  very_hard
+}
+
+enum PersonaType {
+  price_sensitive
+  power_user
+  corporate_buyer
+}
+
+enum MessageRole {
+  user
+  assistant
+}
+
+enum ReviewSentiment {
+  positive
+  mixed
+  negative
+}
+
+// MODELS
+
+model Analysis {
+  id                  String          @id @default(uuid())
+  userId              String          @map("user_id")
+  appName             String          @map("app_name")
+  targetAudience      String          @map("target_audience")
+  description         String
+  status              AnalysisStatus  @default(processing)
+  aiProcessingStage   String?         @map("ai_processing_stage")
+  errorMessage        String?         @map("error_message")
+  createdAt           DateTime        @default(now()) @map("created_at")
+  updatedAt           DateTime        @updatedAt @map("updated_at")
+
+  // Relations
+  userFeatures        UserFeature[]
+  competitors         Competitor[]
+  comparisonParameters ComparisonParameter[]
+  featureMatrixScores FeatureMatrixScore[]
+  gapAnalysisItems    GapAnalysisItem[]
+  blueOceanInsight    BlueOceanInsight?
+  personas            Persona[]
+  positioningData     PositioningData[]
+  simulatedReviews    SimulatedReview[]
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt(sort: Desc)])
+  @@map("analyses")
+}
+
+model UserFeature {
+  id                  String       @id @default(uuid())
+  analysisId          String       @map("analysis_id")
+  featureName         String       @map("feature_name")
+  featureDescription  String?      @map("feature_description")
+  mvpPriority         MVPPriority? @map("mvp_priority")
+  priorityReasoning   String?      @map("priority_reasoning")
+  orderIndex          Int          @map("order_index")
+  createdAt           DateTime     @default(now()) @map("created_at")
+
+  analysis            Analysis     @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+
+  @@index([analysisId])
+  @@index([mvpPriority])
+  @@map("user_features")
+}
+
+model Competitor {
+  id                  String          @id @default(uuid())
+  analysisId          String          @map("analysis_id")
+  name                String
+  type                CompetitorType
+  description         String?
+  websiteUrl          String?         @map("website_url")
+  logoUrl             String?         @map("logo_url")
+  marketPosition      String?         @map("market_position")
+  foundedYear         Int?            @map("founded_year")
+  pricingModel        String?         @map("pricing_model")
+  orderIndex          Int             @map("order_index")
+  createdAt           DateTime        @default(now()) @map("created_at")
+
+  analysis            Analysis        @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+  features            CompetitorFeature[]
+  matrixScores        FeatureMatrixScore[]
+  positioningData     PositioningData[]
+
+  @@index([analysisId])
+  @@index([type])
+  @@map("competitors")
+}
+
+model CompetitorFeature {
+  id                  String    @id @default(uuid())
+  competitorId        String    @map("competitor_id")
+  featureName         String    @map("feature_name")
+  featureDescription  String?   @map("feature_description")
+  featureCategory     String?   @map("feature_category")
+  isPaid              Boolean?  @map("is_paid")
+  createdAt           DateTime  @default(now()) @map("created_at")
+
+  competitor          Competitor @relation(fields: [competitorId], references: [id], onDelete: Cascade)
+
+  @@index([competitorId])
+  @@map("competitor_features")
+}
+
+model ComparisonParameter {
+  id                  String    @id @default(uuid())
+  analysisId          String    @map("analysis_id")
+  parameterName       String    @map("parameter_name")
+  parameterDescription String?  @map("parameter_description")
+  weight              Float?
+  orderIndex          Int       @map("order_index")
+  createdAt           DateTime  @default(now()) @map("created_at")
+
+  analysis            Analysis  @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+  matrixScores        FeatureMatrixScore[]
+
+  @@unique([analysisId, parameterName])
+  @@index([analysisId])
+  @@index([orderIndex])
+  @@map("comparison_parameters")
+}
+
+model FeatureMatrixScore {
+  id                  String     @id @default(uuid())
+  analysisId          String     @map("analysis_id")
+  parameterId         String     @map("parameter_id")
+  entityType          EntityType @map("entity_type")
+  entityId            String?    @map("entity_id")
+  score               Float
+  reasoning           String?
+  createdAt           DateTime   @default(now()) @map("created_at")
+
+  analysis            Analysis   @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+  parameter           ComparisonParameter @relation(fields: [parameterId], references: [id], onDelete: Cascade)
+  competitor          Competitor? @relation(fields: [entityId], references: [id], onDelete: Cascade)
+
+  @@unique([parameterId, entityType, entityId])
+  @@index([analysisId])
+  @@index([parameterId])
+  @@index([entityId])
+  @@map("feature_matrix_scores")
+}
+
+model GapAnalysisItem {
+  id                  String       @id @default(uuid())
+  analysisId          String       @map("analysis_id")
+  type                GapType
+  title               String
+  description         String
+  affectedCompetitors Json?        @map("affected_competitors")
+  severity            GapSeverity?
+  opportunityScore    Float?       @map("opportunity_score")
+  recommendation      String?
+  orderIndex          Int          @map("order_index")
+  createdAt           DateTime     @default(now()) @map("created_at")
+
+  analysis            Analysis     @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+
+  @@index([analysisId])
+  @@index([type])
+  @@index([severity])
+  @@map("gap_analysis_items")
+}
+
+model BlueOceanInsight {
+  id                       String           @id @default(uuid())
+  analysisId               String           @unique @map("analysis_id")
+  marketVacuumTitle        String           @map("market_vacuum_title")
+  description              String
+  supportingEvidence       Json?            @map("supporting_evidence")
+  targetSegment            String?          @map("target_segment")
+  estimatedOpportunity     OpportunityLevel @map("estimated_opportunity")
+  implementationDifficulty DifficultyLevel  @map("implementation_difficulty")
+  strategicRecommendation  String           @map("strategic_recommendation")
+  createdAt                DateTime         @default(now()) @map("created_at")
+
+  analysis                 Analysis         @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+
+  @@index([analysisId])
+  @@map("blue_ocean_insight")
+}
+
+model Persona {
+  id               String       @id @default(uuid())
+  analysisId       String       @map("analysis_id")
+  personaType      PersonaType  @map("persona_type")
+  name             String
+  title            String?
+  description      String
+  painPoints       Json?        @map("pain_points")
+  priorities       Json?
+  behaviorProfile  String?      @map("behavior_profile")
+  systemPrompt     String       @map("system_prompt")
+  orderIndex       Int          @map("order_index")
+  createdAt        DateTime     @default(now()) @map("created_at")
+
+  analysis         Analysis     @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+  chatMessages     PersonaChatMessage[]
+
+  @@unique([analysisId, personaType])
+  @@index([analysisId])
+  @@index([personaType])
+  @@map("personas")
+}
+
+model PersonaChatMessage {
+  id         String      @id @default(uuid())
+  personaId  String      @map("persona_id")
+  role       MessageRole
+  message    String
+  createdAt  DateTime    @default(now()) @map("created_at")
+
+  persona    Persona     @relation(fields: [personaId], references: [id], onDelete: Cascade)
+
+  @@index([personaId])
+  @@index([createdAt])
+  @@map("persona_chat_messages")
+}
+
+model PositioningData {
+  id              String     @id @default(uuid())
+  analysisId      String     @map("analysis_id")
+  entityType      EntityType @map("entity_type")
+  entityId        String?    @map("entity_id")
+  entityName      String     @map("entity_name")
+  valueScore      Float      @map("value_score")
+  complexityScore Float      @map("complexity_score")
+  reasoning       String?
+  quadrant        String?
+  createdAt       DateTime   @default(now()) @map("created_at")
+
+  analysis        Analysis   @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+  competitor      Competitor? @relation(fields: [entityId], references: [id], onDelete: Cascade)
+
+  @@unique([analysisId, entityType, entityId])
+  @@index([analysisId])
+  @@map("positioning_data")
+}
+
+model SimulatedReview {
+  id                    String          @id @default(uuid())
+  analysisId            String          @map("analysis_id")
+  reviewerName          String          @map("reviewer_name")
+  reviewerProfile       String?         @map("reviewer_profile")
+  rating                Int
+  reviewText            String          @map("review_text")
+  sentiment             ReviewSentiment
+  highlightedFeatures   Json?           @map("highlighted_features")
+  painPointsAddressed   Json?           @map("pain_points_addressed")
+  createdAt             DateTime        @default(now()) @map("created_at")
+
+  analysis              Analysis        @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+
+  @@index([analysisId])
+  @@index([rating])
+  @@index([sentiment])
+  @@map("simulated_reviews")
+}

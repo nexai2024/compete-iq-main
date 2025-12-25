@@ -1,0 +1,60 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { auth } from '@clerk/nextjs/server';
+import { prisma } from '@/lib/db/prisma';
+import { NotFoundError, AuthorizationError, formatErrorResponse } from '@/lib/utils/errors';
+import type { AnalysisStatusResponse } from '@/types/api';
+
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { analysisId: string } }
+) {
+  try {
+    // 1. Authenticate user
+    const { userId } = await auth();
+    if (!userId) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
+
+    const { analysisId } = params;
+
+    // 2. Fetch analysis
+    const analysis = await prisma.analysis.findUnique({
+      where: { id: analysisId },
+      select: {
+        id: true,
+        userId: true,
+        status: true,
+        aiProcessingStage: true,
+        errorMessage: true,
+      },
+    });
+
+    if (!analysis) {
+      throw new NotFoundError('Analysis not found');
+    }
+
+    // 3. Verify ownership
+    if (analysis.userId !== userId) {
+      throw new AuthorizationError('You do not have access to this analysis');
+    }
+
+    // 4. Return status
+    const response: AnalysisStatusResponse = {
+      status: analysis.status,
+      aiProcessingStage: analysis.aiProcessingStage,
+      errorMessage: analysis.errorMessage,
+    };
+
+    return NextResponse.json(response);
+  } catch (error) {
+    console.error('Error fetching analysis status:', error);
+    const errorResponse = formatErrorResponse(error);
+    return NextResponse.json(
+      { error: errorResponse.error },
+      { status: errorResponse.statusCode }
+    );
+  }
+}

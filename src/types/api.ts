@@ -1,0 +1,83 @@
+import type {
+  Analysis,
+  AnalysisStatus,
+  Competitor,
+  CompetitorType,
+  UserFeature,
+  MVPPriority,
+  GapAnalysisItem,
+  BlueOceanInsight,
+  Persona,
+  PersonaChatMessage,
+  PositioningData,
+  SimulatedReview,
+  ComparisonParameter,
+  FeatureMatrixScore,
+} from './database';
+
+// API Request Types
+
+export interface CreateAnalysisRequest {
+  appName: string;
+  targetAudience: string;
+  description: string;
+  features: {
+    name: string;
+    description?: string;
+  }[];
+}
+
+export interface CreateAnalysisResponse {
+  analysisId: string;
+  status: AnalysisStatus;
+}
+
+export interface SendPersonaMessageRequest {
+  message: string;
+}
+
+// API Response Types
+
+export interface AnalysisStatusResponse {
+  status: AnalysisStatus;
+  aiProcessingStage?: string | null;
+  errorMessage?: string | null;
+}
+
+export interface FullAnalysisResponse {
+  analysis: Analysis;
+  userFeatures: UserFeature[];
+  competitors: (Competitor & { features: CompetitorFeature[] })[];
+  comparisonParameters: ComparisonParameter[];
+  featureMatrixScores: FeatureMatrixScore[];
+  gapAnalysisItems: GapAnalysisItem[];
+  blueOceanInsight: BlueOceanInsight | null;
+  personas: Persona[];
+  positioningData: PositioningData[];
+  simulatedReviews: SimulatedReview[];
+}
+
+export interface PositioningMapData {
+  positions: (PositioningData & {
+    competitorType?: CompetitorType;
+  })[];
+}
+
+export interface PersonaChatHistoryResponse {
+  messages: PersonaChatMessage[];
+}
+
+// Validation Error Types
+
+export interface ValidationError {
+  field: string;
+  message: string;
+}
+
+export interface ApiError {
+  error: string;
+  validationErrors?: ValidationError[];
+}
+
+// Prisma types that might be needed
+import type { CompetitorFeature } from './database';
