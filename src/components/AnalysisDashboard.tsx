@@ -5,6 +5,16 @@ import Link from 'next/link';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from './ui/Tabs';
 import { formatDateTime } from '@/lib/utils/formatting';
+import { CompetitorCard } from './CompetitorCard';
+import { FeatureMatrix } from './FeatureMatrix';
+import { PositioningMap } from './PositioningMap';
+import { ReviewCard } from './ReviewCard';
+import { MVPRoadmap } from './MVPRoadmap';
+import { DeficitCard } from './DeficitCard';
+import { StandoutCard } from './StandoutCard';
+import { BlueOceanCard } from './BlueOceanCard';
+import { PersonaChat } from './PersonaChat';
+import { ExportCenter } from './ExportCenter';
 import type { FullAnalysisResponse } from '@/types/api';
 
 interface AnalysisDashboardProps {
@@ -119,74 +129,187 @@ export const AnalysisDashboard: React.FC<AnalysisDashboardProps> = ({ analysisId
           </div>
 
           <TabsContent value="overview">
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <h2 className="text-xl font-bold mb-4">Market Overview</h2>
-              <p className="text-gray-600">
-                Comprehensive view of your competitive landscape - coming soon!
-              </p>
-              <div className="mt-4 text-sm text-gray-500">
-                <p>This tab will include:</p>
-                <ul className="list-disc ml-6 mt-2 space-y-1">
-                  <li>Competitor cards with detailed information</li>
-                  <li>Feature comparison matrix</li>
-                  <li>Positioning map (Value vs Complexity)</li>
-                  <li>Simulated user reviews</li>
-                </ul>
+            <div className="space-y-8">
+              {/* Section 1: Competitors */}
+              <div className="bg-white rounded-lg shadow-md p-6">
+                <h2 className="text-xl font-bold mb-4">Competitors ({competitors.length})</h2>
+                {competitors.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {competitors.map((competitor) => (
+                      <CompetitorCard
+                        key={competitor.id}
+                        name={competitor.name}
+                        type={competitor.type}
+                        description={competitor.description}
+                        websiteUrl={competitor.websiteUrl}
+                        marketPosition={competitor.marketPosition}
+                        pricingModel={competitor.pricingModel}
+                        foundedYear={competitor.foundedYear}
+                        featureCount={competitor.features.length}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-gray-500">No competitors found</p>
+                )}
+              </div>
+
+              {/* Section 2: Feature Matrix */}
+              <div className="bg-white rounded-lg shadow-md p-6">
+                <h2 className="text-xl font-bold mb-4">Feature Comparison Matrix</h2>
+                <FeatureMatrix
+                  userAppName={analysis.appName}
+                  competitors={competitors}
+                  parameters={data.comparisonParameters}
+                  scores={data.featureMatrixScores}
+                />
+              </div>
+
+              {/* Section 3: Positioning Map */}
+              <div className="bg-white rounded-lg shadow-md p-6">
+                <h2 className="text-xl font-bold mb-4">Competitive Positioning</h2>
+                <p className="text-gray-600 mb-4">Value vs Complexity analysis</p>
+                <PositioningMap
+                  userAppName={analysis.appName}
+                  positioningData={data.positioningData}
+                />
+              </div>
+
+              {/* Section 4: Simulated Reviews */}
+              <div className="bg-white rounded-lg shadow-md p-6">
+                <h2 className="text-xl font-bold mb-4">
+                  Simulated User Reviews ({data.simulatedReviews.length})
+                </h2>
+                <p className="text-sm text-gray-500 mb-4">
+                  AI-generated reviews based on persona analysis
+                </p>
+                {data.simulatedReviews.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {data.simulatedReviews.map((review) => (
+                      <ReviewCard
+                        key={review.id}
+                        reviewerName={review.reviewerName}
+                        reviewerProfile={review.reviewerProfile}
+                        rating={review.rating}
+                        reviewText={review.reviewText}
+                        sentiment={review.sentiment}
+                        highlightedFeatures={review.highlightedFeatures as string[]}
+                        painPointsAddressed={review.painPointsAddressed as string[]}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-gray-500">No reviews generated</p>
+                )}
               </div>
             </div>
           </TabsContent>
 
           <TabsContent value="gaps">
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <h2 className="text-xl font-bold mb-4">Strategic Gaps</h2>
-              <p className="text-gray-600">
-                MVP roadmap, deficits, standouts, and Blue Ocean opportunity - coming soon!
-              </p>
-              <div className="mt-4 text-sm text-gray-500">
-                <p>This tab will include:</p>
-                <ul className="list-disc ml-6 mt-2 space-y-1">
-                  <li>Feature priorities (P0/P1/P2)</li>
-                  <li>Competitive deficits you need to address</li>
-                  <li>Your unique standouts</li>
-                  <li>Blue Ocean opportunity analysis</li>
-                </ul>
+            <div className="space-y-8">
+              {/* Section 1: MVP Roadmap */}
+              <div className="bg-white rounded-lg shadow-md p-6">
+                <h2 className="text-xl font-bold mb-2">MVP Feature Roadmap</h2>
+                <p className="text-sm text-gray-600 mb-4">
+                  Features prioritized based on competitive analysis and market opportunity
+                </p>
+                <MVPRoadmap features={data.userFeatures} />
+              </div>
+
+              {/* Section 2: Blue Ocean Opportunity */}
+              {data.blueOceanInsight && (
+                <BlueOceanCard
+                  marketVacuumTitle={data.blueOceanInsight.marketVacuumTitle}
+                  description={data.blueOceanInsight.description}
+                  supportingEvidence={data.blueOceanInsight.supportingEvidence as string[]}
+                  targetSegment={data.blueOceanInsight.targetSegment}
+                  estimatedOpportunity={data.blueOceanInsight.estimatedOpportunity}
+                  implementationDifficulty={data.blueOceanInsight.implementationDifficulty}
+                  strategicRecommendation={data.blueOceanInsight.strategicRecommendation}
+                />
+              )}
+
+              {/* Section 3: Competitive Deficits */}
+              <div className="bg-white rounded-lg shadow-md p-6">
+                <h2 className="text-xl font-bold mb-2">
+                  🔴 Competitive Deficits (
+                  {gapAnalysisItems.filter((g) => g.type === 'deficit').length})
+                </h2>
+                <p className="text-sm text-gray-600 mb-4">
+                  Areas where competitors have advantages you should address
+                </p>
+                {gapAnalysisItems.filter((g) => g.type === 'deficit').length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {gapAnalysisItems
+                      .filter((item) => item.type === 'deficit')
+                      .sort((a, b) => {
+                        const severityOrder: Record<string, number> = {
+                          critical: 0,
+                          high: 1,
+                          medium: 2,
+                          low: 3,
+                        };
+                        return (
+                          (severityOrder[a.severity || 'low'] || 3) -
+                          (severityOrder[b.severity || 'low'] || 3)
+                        );
+                      })
+                      .map((deficit) => (
+                        <DeficitCard
+                          key={deficit.id}
+                          title={deficit.title}
+                          description={deficit.description}
+                          severity={deficit.severity || 'low'}
+                          affectedCompetitors={deficit.affectedCompetitors as string[]}
+                          recommendation={deficit.recommendation}
+                        />
+                      ))}
+                  </div>
+                ) : (
+                  <p className="text-gray-500">
+                    No competitive deficits identified - you're well positioned!
+                  </p>
+                )}
+              </div>
+
+              {/* Section 4: Unique Standouts */}
+              <div className="bg-white rounded-lg shadow-md p-6">
+                <h2 className="text-xl font-bold mb-2">
+                  🟢 Unique Standouts (
+                  {gapAnalysisItems.filter((g) => g.type === 'standout').length})
+                </h2>
+                <p className="text-sm text-gray-600 mb-4">
+                  Your competitive advantages and differentiation opportunities
+                </p>
+                {gapAnalysisItems.filter((g) => g.type === 'standout').length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {gapAnalysisItems
+                      .filter((item) => item.type === 'standout')
+                      .sort((a, b) => (b.opportunityScore || 0) - (a.opportunityScore || 0))
+                      .map((standout) => (
+                        <StandoutCard
+                          key={standout.id}
+                          title={standout.title}
+                          description={standout.description}
+                          opportunityScore={standout.opportunityScore || 0}
+                          recommendation={standout.recommendation}
+                        />
+                      ))}
+                  </div>
+                ) : (
+                  <p className="text-gray-500">No unique standouts identified</p>
+                )}
               </div>
             </div>
           </TabsContent>
 
           <TabsContent value="personas">
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <h2 className="text-xl font-bold mb-4">Persona Feedback</h2>
-              <p className="text-gray-600">
-                Interactive chat with AI personas - coming soon!
-              </p>
-              <div className="mt-4 text-sm text-gray-500">
-                <p>This tab will include:</p>
-                <ul className="list-disc ml-6 mt-2 space-y-1">
-                  <li>3 AI personas: Price-Sensitive, Power User, Corporate Buyer</li>
-                  <li>Real-time chat interface</li>
-                  <li>Persona profiles with pain points and priorities</li>
-                  <li>Chat history persistence</li>
-                </ul>
-              </div>
-            </div>
+            <PersonaChat analysisId={analysisId} personas={data.personas} />
           </TabsContent>
 
           <TabsContent value="export">
             <div className="bg-white rounded-lg shadow-md p-6">
-              <h2 className="text-xl font-bold mb-4">Export Center</h2>
-              <p className="text-gray-600">
-                Download your analysis as PDF or Markdown - coming soon!
-              </p>
-              <div className="mt-4 text-sm text-gray-500">
-                <p>This tab will include:</p>
-                <ul className="list-disc ml-6 mt-2 space-y-1">
-                  <li>PDF export with charts and visualizations</li>
-                  <li>Markdown export for easy editing</li>
-                  <li>Shareable link option</li>
-                  <li>Analysis metadata</li>
-                </ul>
-              </div>
+              <ExportCenter analysisId={analysisId} analysisName={analysis.appName} />
             </div>
           </TabsContent>
         </Tabs>
