@@ -63,6 +63,24 @@ Return JSON.`,
 
       const result = JSON.parse(response.choices[0].message.content || '{}');
 
+      // Normalize system_prompt to always be a string
+      let systemPrompt: string;
+      if (result.system_prompt) {
+        if (typeof result.system_prompt === 'string') {
+          systemPrompt = result.system_prompt;
+        } else if (typeof result.system_prompt === 'object' && result.system_prompt.instruction) {
+          // Handle case where AI returns { instruction: "..." }
+          systemPrompt = result.system_prompt.instruction;
+        } else if (typeof result.system_prompt === 'object') {
+          // Fallback: stringify the object
+          systemPrompt = JSON.stringify(result.system_prompt);
+        } else {
+          systemPrompt = generateDefaultSystemPrompt(personaType, analysis.appName);
+        }
+      } else {
+        systemPrompt = generateDefaultSystemPrompt(personaType, analysis.appName);
+      }
+
       personas.push({
         persona_type: personaType,
         name: result.name || `${personaType} Persona`,
@@ -71,7 +89,7 @@ Return JSON.`,
         pain_points: result.pain_points || [],
         priorities: result.priorities || [],
         behavior_profile: result.behavior_profile || 'Standard user behavior',
-        system_prompt: result.system_prompt || generateDefaultSystemPrompt(personaType, analysis.appName),
+        system_prompt: systemPrompt,
       });
     } catch (error) {
       console.error(`Error generating ${personaType} persona:`, error);
