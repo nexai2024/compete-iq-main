@@ -1,19 +1,27 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Input } from './ui/Input';
 import { Textarea } from './ui/Textarea';
 import { Button } from './ui/Button';
 import { FeatureList, Feature } from './FeatureList';
 import { createAnalysisSchema } from '@/lib/utils/validation';
-import type { CreateAnalysisRequest } from '@/types/api';
+import type { CreateAnalysisRequest, ProjectData } from '@/types/api';
+
+type ProjectListItem = { id: string; name?: string; data: ProjectData; updatedAt: string };
 
 export const AnalysisForm: React.FC = () => {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [serverError, setServerError] = useState<string>('');
+
+  // Auto-save/project state
+  const [projectId, setProjectId] = useState<string | null>(null);
+  const [projects, setProjects] = useState<ProjectListItem[]>([]);
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [lastSavedAt, setLastSavedAt] = useState<number | null>(null);
 
   // Form state
   const [appName, setAppName] = useState('');
@@ -24,6 +32,9 @@ export const AnalysisForm: React.FC = () => {
     { id: '2', name: '', description: '' },
     { id: '3', name: '', description: '' },
   ]);
+
+  // Debounce timer
+  const saveTimer = useRef<number | null>(null);
 
   const validateForm = (): boolean => {
     setErrors({});
@@ -64,6 +75,110 @@ export const AnalysisForm: React.FC = () => {
     return true;
   };
 
+  // Save current form state to a Project (auto-save)
+  const saveProject = useCallback(async () => {
+    setSaveStatus('saving');
+
+    try {
+      const nonEmptyFeatures = features.filter((f) => f.name.trim() !== '');
+      const data: ProjectData = {
+        appName: appName || undefined,
+        targetAudience: targetAudience || undefined,
+        description: description || undefined,
+        features: nonEmptyFeatures.map((f) => ({ name: f.name, description: f.description || undefined })),
+      };
+
+      const res = await fetch('/api/projects', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ projectId, name: appName || 'Untitled', data }),
+      });
+
+      const json = await res.json();
+      if (!res.ok) {
+        setSaveStatus('error');
+        console.error('Failed to save project', json);
+        return;
+      }
+
+      const savedProject = json.project;
+      setProjectId(savedProject.id);
+      setLastSavedAt(Date.now());
+      setSaveStatus('saved');
+
+      // Refresh project list
+      fetchProjects();
+    } catch (err) {
+      console.error('Error saving project:', err);
+      setSaveStatus('error');
+    }
+  }, [projectId, appName, targetAudience, description, features]);
+
+  const scheduleAutoSave = useCallback(() => {
+    if (saveTimer.current) window.clearTimeout(saveTimer.current);
+    saveTimer.current = window.setTimeout(() => {
+      saveProject();
+    }, 1000);
+  }, [saveProject]);
+
+  useEffect(() => {
+    // don't auto-save if everything is empty
+    const hasAny = appName || targetAudience || description || features.some((f) => f.name.trim() !== '');
+    if (!hasAny) return;
+    setSaveStatus('idle');
+    scheduleAutoSave();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [appName, targetAudience, description, features]);
+
+  // Load user's projects
+  const fetchProjects = useCallback(async () => {
+    try {
+      const res = await fetch('/api/projects');
+      const json = await res.json();
+      if (!res.ok) return;
+      setProjects(json.projects || []);
+    } catch (err) {
+      console.error('Error fetching projects:', err);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchProjects();
+  }, [fetchProjects]);
+
+  const loadProject = (p: ProjectListItem) => {
+    setProjectId(p.id);
+    setAppName(p.data.appName || '');
+    setTargetAudience(p.data.targetAudience || '');
+    setDescription(p.data.description || '');
+    if (p.data.features && p.data.features.length) {
+      setFeatures(p.data.features.map((f, i) => ({ id: String(i + 1), name: f.name, description: f.description || '' })));
+    } else {
+      setFeatures([{ id: '1', name: '', description: '' }, { id: '2', name: '', description: '' }, { id: '3', name: '', description: '' }]);
+    }
+  };
+
+  // Load project from URL query param if present
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const pid = params.get('projectId');
+      if (!pid) return;
+      (async () => {
+        try {
+          const res = await fetch(`/api/projects/${pid}`);
+          if (!res.ok) return;
+          const json = await res.json();
+          if (json.project) loadProject(json.project);
+        } catch (err) {
+          console.error('Error loading project from query param:', err);
+        }
+      })();
+    } catch (err) {
+      // ignore (window may not be available in some environments)
+    }
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -73,6 +188,9 @@ export const AnalysisForm: React.FC = () => {
     setServerError('');
 
     try {
+      // Ensure project is saved before starting analysis
+      await saveProject();
+
       // Filter out empty features
       const nonEmptyFeatures = features.filter((f) => f.name.trim() !== '');
 
@@ -123,6 +241,37 @@ export const AnalysisForm: React.FC = () => {
         </div>
       )}
 
+      {/* Projects picker + save status */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-2">
+          <label className="text-sm text-gray-600">Saved Projects</label>
+          <select
+            value={projectId || ''}
+            onChange={(e) => {
+              const id = e.target.value;
+              const selected = projects.find((p) => p.id === id);
+              if (selected) loadProject(selected);
+            }}
+            className="border rounded p-2"
+          >
+            <option value="">-- Select project --</option>
+            {projects.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name || 'Untitled'} — {new Date(p.updatedAt).toLocaleString()}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="text-sm text-gray-500">
+          {saveStatus === 'saving' && <span>Saving…</span>}
+          {saveStatus === 'saved' && lastSavedAt && (
+            <span>Saved {Math.round((Date.now() - lastSavedAt) / 1000)}s ago</span>
+          )}
+          {saveStatus === 'error' && <span className="text-red-600">Error saving</span>}
+        </div>
+      </div>
+
       {/* Section 1: App Name */}
       <div>
         <Input
@@ -167,7 +316,7 @@ export const AnalysisForm: React.FC = () => {
 
       {/* Section 4: Feature List */}
       <div>
-        <FeatureList features={features} onChange={setFeatures} errors={errors} />
+        <FeatureList features={features} onChange={(f) => { setFeatures(f); }} errors={errors} />
       </div>
 
       {/* Submit Button */}

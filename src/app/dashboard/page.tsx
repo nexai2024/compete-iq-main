@@ -1,9 +1,9 @@
 import Link from 'next/link';
 import { Plus } from 'lucide-react';
+import { ProjectList } from '@/components/ProjectList';
 
 export default function DashboardPage() {
-  return (
-    <div className="min-h-screen bg-gray-50">
+  return (    <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Header */}
         <div className="flex justify-between items-center mb-8">
@@ -60,6 +60,11 @@ export default function DashboardPage() {
               Download reports as PDF or Markdown for your team
             </p>
           </div>
+        </div>
+
+        {/* Saved Projects */}
+        <div className="mt-8">
+          <ProjectList />
         </div>
       </div>
     </div>
