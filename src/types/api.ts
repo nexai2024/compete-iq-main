@@ -57,6 +57,21 @@ export interface FullAnalysisResponse {
   simulatedReviews: SimulatedReview[];
 }
 
+export interface AnalysisListItem {
+  id: string;
+  appName: string;
+  targetAudience: string;
+  status: AnalysisStatus;
+  createdAt: string;
+  updatedAt: string;
+  competitorCount: number;
+  errorMessage?: string | null;
+}
+
+export interface AnalysisListResponse {
+  analyses: AnalysisListItem[];
+}
+
 export interface PositioningMapData {
   positions: (PositioningData & {
     competitorType?: CompetitorType;
