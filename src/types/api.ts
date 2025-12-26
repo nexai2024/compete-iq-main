@@ -79,5 +79,23 @@ export interface ApiError {
   validationErrors?: ValidationError[];
 }
 
+export interface ProjectData {
+  appName?: string;
+  targetAudience?: string;
+  description?: string;
+  features?: {
+    name: string;
+    description?: string;
+  }[];
+}
+
+export interface ProjectResponse {
+  projectId: string;
+  name?: string;
+  data: ProjectData;
+  createdAt: string;
+  updatedAt: string;
+}
+
 // Prisma types that might be needed
 import type { CompetitorFeature } from './database';

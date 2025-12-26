@@ -6,7 +6,7 @@ import type { AnalysisStatusResponse } from '@/types/api';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { analysisId: string } }
+  { params }: { params: Promise<{ analysisId: string }> }
 ) {
   try {
     // 1. Authenticate user
@@ -18,7 +18,7 @@ export async function GET(
       );
     }
 
-    const { analysisId } = params;
+    const { analysisId } = await params;
 
     // 2. Fetch analysis
     const analysis = await prisma.analysis.findUnique({
