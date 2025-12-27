@@ -4,6 +4,7 @@ import { prisma } from '@/lib/db/prisma';
 import { formatErrorResponse } from '@/lib/utils/errors';
 import { sanitizeFileName } from '@/lib/utils/formatting';
 import { generateMarkdownReport } from '@/lib/export/markdown-generator';
+import { CompetitorType, PositioningData } from '@/types/database';
 
 export async function GET(
   request: NextRequest,
@@ -62,7 +63,7 @@ export async function GET(
     }
 
     // 4. Enrich positioning data with competitor type
-    const enrichedPositioningData = analysis.positioningData.map((position) => ({
+    const enrichedPositioningData = analysis.positioningData.map((position: { competitor: { type: CompetitorType; }; }) => ({
       ...position,
       competitorType: position.competitor?.type || undefined,
     }));
@@ -77,7 +78,7 @@ export async function GET(
       gapAnalysisItems: analysis.gapAnalysisItems,
       blueOceanInsight: analysis.blueOceanInsight,
       personas: analysis.personas,
-      positioningData: enrichedPositioningData as typeof analysis.positioningData,
+      positioningData: enrichedPositioningData as PositioningData[],
       simulatedReviews: analysis.simulatedReviews,
       marketIntelligence: analysis.marketIntelligence,
     });
