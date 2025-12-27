@@ -12,8 +12,8 @@ interface PersonaChatProps {
     name: string;
     title: string;
     description: string;
-    painPoints: any;
-    priorities: any;
+    painPoints: unknown;
+    priorities: unknown;
     behaviorProfile: string;
   }>;
 }
@@ -132,7 +132,7 @@ export function PersonaChat({ analysisId, personas }: PersonaChatProps) {
           }
         }
       }
-    } catch (err) {
+    } catch {
       setError('Failed to send message. Please try again.');
       // Remove assistant message bubble
       setMessages((prev) => prev.filter((m) => m.id !== assistantMessageId));

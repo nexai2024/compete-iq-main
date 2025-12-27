@@ -93,6 +93,36 @@ export interface PositioningMapDataPoint {
   reasoning: string;
 }
 
+export interface MarketIntelligenceData {
+  industry_overview: string;
+  market_size?: string;
+  market_growth?: string;
+  market_trends?: string[];
+  competitive_landscape: string;
+  market_dynamics?: {
+    drivers: string[];
+    restraints: string[];
+    opportunities: string[];
+  };
+  barriers_to_entry?: {
+    level: 'low' | 'medium' | 'high' | 'very_high';
+    factors: string[];
+  };
+  opportunities?: {
+    title: string;
+    description: string;
+    potential_impact: 'low' | 'medium' | 'high' | 'very_high';
+  }[];
+  threats?: {
+    title: string;
+    description: string;
+    severity: 'low' | 'medium' | 'high' | 'critical';
+    mitigation: string;
+  }[];
+  strategic_recommendations: string;
+  key_success_factors?: string[];
+}
+
 // Processing stage types
 export type ProcessingStage =
   | 'competitors'
@@ -113,5 +143,7 @@ export type ProcessingStage =
   | 'personas_complete'
   | 'positioning'
   | 'positioning_complete'
+  | 'market_intelligence'
+  | 'market_intelligence_complete'
   | 'finalizing'
   | 'complete';

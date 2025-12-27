@@ -103,7 +103,7 @@ export const AnalysisLoadingState: React.FC<AnalysisLoadingStateProps> = ({ stag
 
           {/* Info */}
           <div className="text-left bg-blue-50 rounded-lg p-4 text-sm text-gray-700">
-            <p className="font-medium mb-2">What's happening:</p>
+            <p className="font-medium mb-2">What&apos;s happening:</p>
             <ul className="space-y-1 text-gray-600">
               <li>🔍 Searching for competitors using AI</li>
               <li>📊 Analyzing features and generating comparison matrix</li>
@@ -114,7 +114,7 @@ export const AnalysisLoadingState: React.FC<AnalysisLoadingStateProps> = ({ stag
           </div>
 
           <p className="mt-6 text-xs text-gray-500">
-            This usually takes 2-3 minutes. Please don't close this page.
+            This usually takes 2-3 minutes. Please don&apos;t close this page.
           </p>
         </div>
       </div>

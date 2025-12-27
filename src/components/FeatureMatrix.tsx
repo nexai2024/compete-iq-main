@@ -46,6 +46,22 @@ export function FeatureMatrix({
     return score?.score ?? null;
   };
 
+  if (!parameters || parameters.length === 0) {
+    return (
+      <div className="text-center py-8 text-gray-500">
+        <p>No comparison parameters available. Feature matrix is being generated.</p>
+      </div>
+    );
+  }
+
+  if (!scores || scores.length === 0) {
+    return (
+      <div className="text-center py-8 text-gray-500">
+        <p>No scores available yet. Feature matrix is being generated.</p>
+      </div>
+    );
+  }
+
   return (
     <div className="overflow-x-auto">
       <table className="min-w-full border-collapse">
@@ -58,10 +74,10 @@ export function FeatureMatrix({
               <th
                 key={param.id}
                 className="border border-gray-300 px-3 py-2 text-center text-xs font-semibold text-gray-900 min-w-[80px]"
-                title={param.description}
+                title={param.parameterDescription ?? undefined}
               >
                 <div className="writing-mode-vertical-rl transform rotate-180">
-                  {param.name}
+                  {param.parameterName}
                 </div>
               </th>
             ))}
@@ -94,7 +110,7 @@ export function FeatureMatrix({
                 <td key={param.id} className="border border-gray-300 px-3 py-3 text-center">
                   <span
                     className={`inline-flex items-center justify-center w-10 h-10 rounded-full ${style.bg} ${style.text} font-semibold text-sm`}
-                    title={`${param.name}: ${score}/10`}
+                    title={`${param.parameterName}: ${score}/10`}
                   >
                     {score.toFixed(1)}
                   </span>
@@ -126,7 +142,7 @@ export function FeatureMatrix({
                   <td key={param.id} className="border border-gray-300 px-3 py-3 text-center">
                     <span
                       className={`inline-flex items-center justify-center w-10 h-10 rounded-full ${style.bg} ${style.text} font-semibold text-sm`}
-                      title={`${param.name}: ${score}/10`}
+                      title={`${param.parameterName}: ${score}/10`}
                     >
                       {score.toFixed(1)}
                     </span>

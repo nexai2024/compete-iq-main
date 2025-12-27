@@ -42,7 +42,7 @@ export function generateMarkdownReport(data: FullAnalysisResponse): string {
 
   // Feature Comparison Matrix
   markdown += `## Feature Comparison Matrix\n\n`;
-  markdown += `| Entity | ${comparisonParameters.map((p) => p.name).join(' | ')} |\n`;
+  markdown += `| Entity | ${comparisonParameters.map((p) => p.parameterName).join(' | ')} |\n`;
   markdown += `|--------|${comparisonParameters.map(() => '---').join('|')}|\n`;
 
   // User app row

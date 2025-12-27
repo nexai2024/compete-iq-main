@@ -101,7 +101,7 @@ export async function GET(request: NextRequest) {
     const sortBy = searchParams.get('sortBy') || 'newest';
 
     // 3. Build query filters
-    const whereClause: any = { userId };
+    const whereClause: { userId: string; status?: AnalysisStatus } = { userId };
 
     // Add status filter if valid
     if (statusParam && ['completed', 'processing', 'failed'].includes(statusParam)) {

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import { X, Plus } from 'lucide-react';
 import { Input } from './ui/Input';
 import { Textarea } from './ui/Textarea';

@@ -76,7 +76,7 @@ Return as a JSON object with a "competitors" array.`,
     let parsedData: { competitors: CompetitorSearchResult[] };
     try {
       parsedData = JSON.parse(content);
-    } catch (parseError) {
+    } catch {
       // If JSON parsing fails, use OpenAI to extract structured data
       parsedData = await extractCompetitorsWithOpenAI(content);
     }

@@ -5,6 +5,7 @@ import { analyzeGaps, discoverBlueOcean } from './gap-analysis';
 import { prioritizeFeatures } from './mvp-scoper';
 import { generatePersonas, generateSimulatedReviews } from './persona-generator';
 import { generatePositioningData } from './positioning-map';
+import { generateMarketIntelligence } from './market-intelligence';
 
 /**
  * Main AI processing pipeline
@@ -311,7 +312,31 @@ export async function processAnalysis(analysisId: string): Promise<void> {
 
     await updateStage(analysisId, 'positioning_complete');
 
-    // Stage 7: Finalization
+    // Stage 7: Market Intelligence
+    await updateStage(analysisId, 'market_intelligence');
+
+    const marketIntelligence = await generateMarketIntelligence(analysis, competitorsWithFeatures);
+
+    await prisma.marketIntelligence.create({
+      data: {
+        analysisId,
+        industryOverview: marketIntelligence.industry_overview,
+        marketSize: marketIntelligence.market_size ?? undefined,
+        marketGrowth: marketIntelligence.market_growth ?? undefined,
+        marketTrends: marketIntelligence.market_trends ?? undefined,
+        competitiveLandscape: marketIntelligence.competitive_landscape ?? undefined,
+        marketDynamics: marketIntelligence.market_dynamics ?? undefined,
+        barriersToEntry: marketIntelligence.barriers_to_entry ?? undefined,
+        opportunities: marketIntelligence.opportunities ?? undefined,
+        threats: marketIntelligence.threats ?? undefined,
+        strategicRecommendations: marketIntelligence.strategic_recommendations ?? undefined,
+        keySuccessFactors: marketIntelligence.key_success_factors ?? undefined,
+      },
+    });
+
+    await updateStage(analysisId, 'market_intelligence_complete');
+
+    // Stage 8: Finalization
     await updateStage(analysisId, 'complete');
 
     await prisma.analysis.update({

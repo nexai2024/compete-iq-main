@@ -27,7 +27,14 @@ interface PositioningMapProps {
 
 interface CustomTooltipProps {
   active?: boolean;
-  payload?: any[];
+  payload?: Array<{
+    payload: {
+      entityName: string;
+      valueScore: number;
+      complexityScore: number;
+      quadrant?: string | null;
+    };
+  }>;
 }
 
 function CustomTooltip({ active, payload }: CustomTooltipProps) {
@@ -47,7 +54,15 @@ function CustomTooltip({ active, payload }: CustomTooltipProps) {
   return null;
 }
 
-export function PositioningMap({ userAppName, positioningData }: PositioningMapProps) {
+export function PositioningMap({ positioningData }: PositioningMapProps) {
+  if (!positioningData || positioningData.length === 0) {
+    return (
+      <div className="text-center py-8 text-gray-500">
+        <p>Positioning data is being generated. Please check back shortly.</p>
+      </div>
+    );
+  }
+
   // Split data by type
   const userAppData = positioningData.filter((d) => d.entityType === 'user_app');
   const directCompetitorData = positioningData.filter(
@@ -56,6 +71,15 @@ export function PositioningMap({ userAppName, positioningData }: PositioningMapP
   const indirectCompetitorData = positioningData.filter(
     (d) => d.entityType === 'competitor' && d.competitorType === 'indirect'
   );
+
+  // If no data points, show message
+  if (userAppData.length === 0 && directCompetitorData.length === 0 && indirectCompetitorData.length === 0) {
+    return (
+      <div className="text-center py-8 text-gray-500">
+        <p>No positioning data available yet.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full">
@@ -103,7 +127,7 @@ export function PositioningMap({ userAppName, positioningData }: PositioningMapP
           </Scatter>
           <Scatter name="Direct Competitors" data={directCompetitorData} fill="#f97316">
             {directCompetitorData.map((entry) => (
-              <Cell key={entry.id} r={8} />
+              <Cell key={entry.id} fill="#f97316" r={8} />
             ))}
           </Scatter>
           <Scatter name="Indirect Competitors" data={indirectCompetitorData} fill="#a855f7">

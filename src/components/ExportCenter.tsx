@@ -38,7 +38,7 @@ export function ExportCenter({ analysisId, analysisName }: ExportCenterProps) {
 
       setSuccessMessage('Markdown downloaded successfully!');
       setTimeout(() => setSuccessMessage(null), 3000);
-    } catch (err) {
+    } catch {
       setError('Failed to download markdown. Please try again.');
     } finally {
       setIsDownloadingMarkdown(false);
@@ -71,7 +71,7 @@ export function ExportCenter({ analysisId, analysisName }: ExportCenterProps) {
 
       setSuccessMessage('PDF downloaded successfully!');
       setTimeout(() => setSuccessMessage(null), 3000);
-    } catch (err) {
+    } catch {
       setError('Failed to download PDF. Please try again.');
     } finally {
       setIsDownloadingPDF(false);

@@ -37,17 +37,17 @@ export async function prioritizeFeatures(
       messages: [
         {
           role: 'system',
-          content: 'You are a product strategy expert. Prioritize features for MVP development.',
+          content: 'You are a product strategy expert. Prioritize features for MVP development. You MUST assign a priority to EVERY feature.',
         },
         {
           role: 'user',
-          content: `User's Features:
+          content: `User's Features (${userFeatures.length} total):
 ${featuresList}
 
 Competitor Analysis: ${competitorsSummary}
 Gap Analysis Deficits: ${deficitsSummary}
 
-For EACH feature, assign a priority:
+For EACH of the ${userFeatures.length} features listed above, assign a priority:
 
 - P0 (Must Have for MVP):
   - Core value proposition
@@ -67,14 +67,19 @@ For EACH feature, assign a priority:
   - Can wait for later iterations
   - Advanced or niche features
 
-Return JSON array (one per feature):
-[
-  {
-    "feature_index": 0,  // 0-based index matching input order
-    "priority": "P0|P1|P2",
-    "reasoning": "brief explanation"
-  }
-]`,
+IMPORTANT: You must return priorities for ALL ${userFeatures.length} features. Use feature_index 0 through ${userFeatures.length - 1}.
+
+Return JSON object with "priorities" array:
+{
+  "priorities": [
+    {
+      "feature_index": 0,  // 0-based index matching input order (0 to ${userFeatures.length - 1})
+      "priority": "P0|P1|P2",
+      "reasoning": "brief explanation"
+    },
+    // ... one entry for each feature
+  ]
+}`,
         },
       ],
       temperature: 0.3,
@@ -84,12 +89,32 @@ Return JSON array (one per feature):
     const result = JSON.parse(response.choices[0].message.content || '{"priorities":[]}');
     const priorities = result.priorities || [];
 
-    // Map priorities to feature IDs
-    return priorities.map((p: { feature_index: number; priority: string; reasoning: string }) => ({
-      feature_id: userFeatures[p.feature_index]?.id || userFeatures[0].id,
-      priority: p.priority as 'P0' | 'P1' | 'P2',
-      reasoning: p.reasoning || 'Priority determined by strategic analysis',
-    }));
+    // Ensure we have priorities for all features
+    const priorityMap = new Map<number, { priority: 'P0' | 'P1' | 'P2'; reasoning: string }>();
+    
+    priorities.forEach((p: { feature_index: number; priority: string; reasoning: string }) => {
+      const index = p.feature_index;
+      if (index >= 0 && index < userFeatures.length) {
+        priorityMap.set(index, {
+          priority: (p.priority || 'P2') as 'P0' | 'P1' | 'P2',
+          reasoning: p.reasoning || 'Priority determined by strategic analysis',
+        });
+      }
+    });
+
+    // Map priorities to feature IDs, ensuring all features get a priority
+    return userFeatures.map((feature, index) => {
+      const priority = priorityMap.get(index) || {
+        priority: (index < userFeatures.length / 3 ? 'P0' : index < (userFeatures.length * 2) / 3 ? 'P1' : 'P2') as 'P0' | 'P1' | 'P2',
+        reasoning: 'Default priority assignment - AI did not return priority for this feature',
+      };
+      
+      return {
+        feature_id: feature.id,
+        priority: priority.priority,
+        reasoning: priority.reasoning,
+      };
+    });
   } catch (error) {
     console.error('Error prioritizing features:', error);
     // Return default priorities (split evenly)

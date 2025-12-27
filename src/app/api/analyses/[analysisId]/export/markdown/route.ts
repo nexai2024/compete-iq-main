@@ -7,7 +7,7 @@ import { generateMarkdownReport } from '@/lib/export/markdown-generator';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { analysisId: string } }
+  { params }: { params: Promise<{ analysisId: string }> }
 ) {
   try {
     // 1. Authenticate user
@@ -16,7 +16,7 @@ export async function GET(
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
 
-    const { analysisId } = params;
+    const { analysisId } = await params;
 
     // 2. Fetch complete analysis data with all relations
     const analysis = await prisma.analysis.findUnique({
@@ -35,8 +35,17 @@ export async function GET(
         gapAnalysisItems: true,
         blueOceanInsight: true,
         personas: true,
-        positioningData: true,
+        positioningData: {
+          include: {
+            competitor: {
+              select: {
+                type: true,
+              },
+            },
+          },
+        },
         simulatedReviews: true,
+        marketIntelligence: true,
       },
     });
 
@@ -52,7 +61,13 @@ export async function GET(
       );
     }
 
-    // 4. Generate markdown report
+    // 4. Enrich positioning data with competitor type
+    const enrichedPositioningData = analysis.positioningData.map((position) => ({
+      ...position,
+      competitorType: position.competitor?.type || undefined,
+    }));
+
+    // 5. Generate markdown report
     const markdown = generateMarkdownReport({
       analysis,
       userFeatures: analysis.userFeatures,
@@ -62,11 +77,12 @@ export async function GET(
       gapAnalysisItems: analysis.gapAnalysisItems,
       blueOceanInsight: analysis.blueOceanInsight,
       personas: analysis.personas,
-      positioningData: analysis.positioningData,
+      positioningData: enrichedPositioningData as typeof analysis.positioningData,
       simulatedReviews: analysis.simulatedReviews,
+      marketIntelligence: analysis.marketIntelligence,
     });
 
-    // 5. Return as downloadable file
+    // 6. Return as downloadable file
     const filename = sanitizeFileName(analysis.appName) || 'analysis';
     return new Response(markdown, {
       headers: {

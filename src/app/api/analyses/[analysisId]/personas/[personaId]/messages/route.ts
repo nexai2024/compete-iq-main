@@ -9,7 +9,7 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { analysisId: string; personaId: string } }
+  { params }: { params: Promise<{ analysisId: string; personaId: string }> }
 ) {
   try {
     // 1. Authenticate user
@@ -18,7 +18,7 @@ export async function POST(
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
 
-    const { analysisId, personaId } = params;
+    const { analysisId, personaId } = await params;
 
     // 2. Validate request body
     const body = await request.json();
@@ -152,7 +152,7 @@ export async function POST(
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { analysisId: string; personaId: string } }
+  { params }: { params: Promise<{ analysisId: string; personaId: string }> }
 ) {
   try {
     // 1. Authenticate user
@@ -161,7 +161,7 @@ export async function GET(
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
 
-    const { analysisId, personaId } = params;
+    const { analysisId, personaId } = await params;
 
     // 2. Verify analysis belongs to user
     const analysis = await prisma.analysis.findUnique({

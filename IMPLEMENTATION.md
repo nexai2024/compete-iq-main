@@ -157,7 +157,7 @@ These features are specified in the plan but not yet implemented. The core appli
 - ⏳ `POST /api/analyses/[id]/export/pdf` endpoint
 - ⏳ `GET /api/analyses/[id]/export/markdown` endpoint
 
-### Dashboard List
+                                            ### Dashboard List
 - ⏳ Fetch user's analyses
 - ⏳ Analysis cards with metadata
 - ⏳ Sort and filter options

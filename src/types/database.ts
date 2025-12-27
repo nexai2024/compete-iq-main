@@ -12,6 +12,7 @@ export type {
   PersonaChatMessage,
   PositioningData,
   SimulatedReview,
+  MarketIntelligence,
   AnalysisStatus,
   CompetitorType,
   MVPPriority,

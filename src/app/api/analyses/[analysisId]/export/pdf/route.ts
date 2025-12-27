@@ -3,12 +3,13 @@ import { auth } from '@clerk/nextjs/server';
 import { prisma } from '@/lib/db/prisma';
 import { formatErrorResponse } from '@/lib/utils/errors';
 import { sanitizeFileName } from '@/lib/utils/formatting';
-import { renderToStream } from '@react-pdf/renderer';
+import { DocumentProps, renderToStream } from '@react-pdf/renderer';
+import React from 'react';
 import { AnalysisPDFDocument } from '@/lib/export/PDFDocument';
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { analysisId: string } }
+  { params }: { params: Promise<{ analysisId: string }> }
 ) {
   try {
     // 1. Authenticate user
@@ -17,7 +18,7 @@ export async function POST(
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
 
-    const { analysisId } = params;
+    const { analysisId } = await params;
 
     // 2. Fetch complete analysis data with all relations
     const analysis = await prisma.analysis.findUnique({
@@ -36,8 +37,17 @@ export async function POST(
         gapAnalysisItems: true,
         blueOceanInsight: true,
         personas: true,
-        positioningData: true,
+        positioningData: {
+          include: {
+            competitor: {
+              select: {
+                type: true,
+              },
+            },
+          },
+        },
         simulatedReviews: true,
+        marketIntelligence: true,
       },
     });
 
@@ -54,26 +64,27 @@ export async function POST(
     }
 
     // 4. Generate PDF using react-pdf
-    const pdfStream = await renderToStream(
-      <AnalysisPDFDocument
-        data={{
-          analysis,
-          userFeatures: analysis.userFeatures,
-          competitors: analysis.competitors,
-          comparisonParameters: analysis.comparisonParameters,
-          featureMatrixScores: analysis.featureMatrixScores,
-          gapAnalysisItems: analysis.gapAnalysisItems,
-          blueOceanInsight: analysis.blueOceanInsight,
-          personas: analysis.personas,
-          positioningData: analysis.positioningData,
-          simulatedReviews: analysis.simulatedReviews,
-        }}
-      />
-    );
+    const pdfDocument = React.createElement(AnalysisPDFDocument, {
+      data: {
+        analysis,
+        userFeatures: analysis.userFeatures,
+        competitors: analysis.competitors,
+        comparisonParameters: analysis.comparisonParameters,
+        featureMatrixScores: analysis.featureMatrixScores,
+        gapAnalysisItems: analysis.gapAnalysisItems,
+        blueOceanInsight: analysis.blueOceanInsight,
+        personas: analysis.personas,
+        positioningData: analysis.positioningData,
+        simulatedReviews: analysis.simulatedReviews,
+        marketIntelligence: analysis.marketIntelligence,
+      },
+    }) as React.ReactElement<DocumentProps>;
+
+    const pdfStream = await renderToStream(pdfDocument);
 
     // 5. Return as downloadable file
     const filename = sanitizeFileName(analysis.appName) || 'analysis';
-    return new Response(pdfStream as any, {
+    return new Response(pdfStream as unknown as ReadableStream<Uint8Array>, {
       headers: {
         'Content-Type': 'application/pdf',
         'Content-Disposition': `attachment; filename="${filename}-analysis.pdf"`,

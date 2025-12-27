@@ -49,10 +49,19 @@ export async function GET(
         personas: {
           orderBy: { orderIndex: 'asc' },
         },
-        positioningData: true,
+        positioningData: {
+          include: {
+            competitor: {
+              select: {
+                type: true,
+              },
+            },
+          },
+        },
         simulatedReviews: {
           orderBy: { rating: 'desc' },
         },
+        marketIntelligence: true,
       },
     });
 
@@ -65,7 +74,13 @@ export async function GET(
       throw new AuthorizationError('You do not have access to this analysis');
     }
 
-    // 4. Return full analysis data
+    // 4. Enrich positioning data with competitor type
+    const enrichedPositioningData = analysis.positioningData.map((position) => ({
+      ...position,
+      competitorType: position.competitor?.type || undefined,
+    }));
+
+    // 5. Return full analysis data
     const response: FullAnalysisResponse = {
       analysis,
       userFeatures: analysis.userFeatures,
@@ -75,13 +90,59 @@ export async function GET(
       gapAnalysisItems: analysis.gapAnalysisItems,
       blueOceanInsight: analysis.blueOceanInsight,
       personas: analysis.personas,
-      positioningData: analysis.positioningData,
+      positioningData: enrichedPositioningData as typeof analysis.positioningData,
       simulatedReviews: analysis.simulatedReviews,
+      marketIntelligence: analysis.marketIntelligence,
     };
 
     return NextResponse.json(response);
   } catch (error) {
     console.error('Error fetching analysis:', error);
+    const errorResponse = formatErrorResponse(error);
+    return NextResponse.json(
+      { error: errorResponse.error },
+      { status: errorResponse.statusCode }
+    );
+  }
+}
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ analysisId: string }> }
+) {
+  try {
+    // 1. Authenticate user
+    const { userId } = await auth();
+    if (!userId) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
+
+    const { analysisId } = await params;
+
+    // 2. Verify analysis exists and user owns it
+    const analysis = await prisma.analysis.findUnique({
+      where: { id: analysisId },
+    });
+
+    if (!analysis) {
+      throw new NotFoundError('Analysis not found');
+    }
+
+    if (analysis.userId !== userId) {
+      throw new AuthorizationError('You do not have access to this analysis');
+    }
+
+    // 3. Delete analysis (cascade deletes all related data)
+    await prisma.analysis.delete({
+      where: { id: analysisId },
+    });
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('Error deleting analysis:', error);
     const errorResponse = formatErrorResponse(error);
     return NextResponse.json(
       { error: errorResponse.error },

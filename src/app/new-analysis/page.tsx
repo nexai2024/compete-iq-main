@@ -18,7 +18,7 @@ export default function NewAnalysisPage() {
 
           <h1 className="text-3xl font-bold text-gray-900">Create New Analysis</h1>
           <p className="mt-2 text-lg text-gray-600">
-            Tell us about your app idea and we'll analyze it against the market
+            Tell us about your app idea and we&apos;ll analyze it against the market
           </p>
         </div>
 

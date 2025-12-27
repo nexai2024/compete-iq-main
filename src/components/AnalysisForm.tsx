@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import { Github, Loader2 } from 'lucide-react';
 import { Input } from './ui/Input';
 import { Textarea } from './ui/Textarea';
 import { Button } from './ui/Button';
@@ -32,6 +33,13 @@ export const AnalysisForm: React.FC = () => {
     { id: '2', name: '', description: '' },
     { id: '3', name: '', description: '' },
   ]);
+
+  // GitHub import state
+  const [githubUrl, setGithubUrl] = useState('');
+  const [githubToken, setGithubToken] = useState('');
+  const [isImporting, setIsImporting] = useState(false);
+  const [importError, setImportError] = useState<string>('');
+  const [showGitHubImport, setShowGitHubImport] = useState(false);
 
   // Debounce timer
   const saveTimer = useRef<number | null>(null);
@@ -108,8 +116,8 @@ export const AnalysisForm: React.FC = () => {
 
       // Refresh project list
       fetchProjects();
-    } catch (err) {
-      console.error('Error saving project:', err);
+    } catch {
+      console.error('Error saving project');
       setSaveStatus('error');
     }
   }, [projectId, appName, targetAudience, description, features]);
@@ -132,13 +140,14 @@ export const AnalysisForm: React.FC = () => {
 
   // Load user's projects
   const fetchProjects = useCallback(async () => {
+    // Fetch projects
     try {
       const res = await fetch('/api/projects');
       const json = await res.json();
       if (!res.ok) return;
       setProjects(json.projects || []);
-    } catch (err) {
-      console.error('Error fetching projects:', err);
+    } catch {
+      console.error('Error fetching projects');
     }
   }, []);
 
@@ -170,14 +179,80 @@ export const AnalysisForm: React.FC = () => {
           if (!res.ok) return;
           const json = await res.json();
           if (json.project) loadProject(json.project);
-        } catch (err) {
-          console.error('Error loading project from query param:', err);
+        } catch {
+          console.error('Error loading project from query param');
         }
       })();
-    } catch (err) {
+    } catch {
       // ignore (window may not be available in some environments)
     }
   }, []);
+
+  const handleGitHubImport = async () => {
+    if (!githubUrl.trim()) {
+      setImportError('Please enter a GitHub repository URL');
+      return;
+    }
+
+    setIsImporting(true);
+    setImportError('');
+
+    try {
+      const response = await fetch('/api/github/import', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          githubUrl: githubUrl.trim(),
+          githubToken: githubToken.trim() || undefined,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to import from GitHub');
+      }
+
+      // Populate form with imported data
+      if (data.data) {
+        setAppName(data.data.appName || '');
+        setTargetAudience(data.data.targetAudience || '');
+        setDescription(data.data.description || '');
+        
+        // Convert features to form format
+        if (data.data.features && data.data.features.length > 0) {
+          const importedFeatures: Feature[] = data.data.features.map(
+            (f: { name: string; description?: string }, index: number) => ({
+              id: String(index + 1),
+              name: f.name,
+              description: f.description || '',
+            })
+          );
+          // Add empty slots if needed
+          while (importedFeatures.length < 3) {
+            importedFeatures.push({
+              id: String(importedFeatures.length + 1),
+              name: '',
+              description: '',
+            });
+          }
+          setFeatures(importedFeatures);
+        }
+
+        // Clear GitHub inputs and hide section
+        setGithubUrl('');
+        setGithubToken('');
+        setShowGitHubImport(false);
+      }
+    } catch (error) {
+      console.error('Error importing from GitHub:', error);
+      setImportError(error instanceof Error ? error.message : 'Failed to import from GitHub');
+    } finally {
+      setIsImporting(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -225,8 +300,8 @@ export const AnalysisForm: React.FC = () => {
 
       // Redirect to analysis page
       router.push(`/analysis/${data.analysisId}`);
-    } catch (error) {
-      console.error('Error creating analysis:', error);
+    } catch {
+      console.error('Error creating analysis');
       setServerError('An unexpected error occurred. Please try again.');
     } finally {
       setIsSubmitting(false);
@@ -240,6 +315,101 @@ export const AnalysisForm: React.FC = () => {
           <p className="text-sm text-red-800">{serverError}</p>
         </div>
       )}
+
+      {/* GitHub Import Section */}
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+        {!showGitHubImport ? (
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-1 flex items-center gap-2">
+                <Github className="w-5 h-5" />
+                Import from GitHub
+              </h3>
+              <p className="text-sm text-gray-600">
+                Automatically extract app name, description, and features from your GitHub repository
+              </p>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setShowGitHubImport(true)}
+            >
+              Import from GitHub
+            </Button>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                <Github className="w-5 h-5" />
+                Import from GitHub
+              </h3>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setShowGitHubImport(false);
+                  setGithubUrl('');
+                  setGithubToken('');
+                  setImportError('');
+                }}
+              >
+                Cancel
+              </Button>
+            </div>
+
+            <div>
+              <Input
+                label="GitHub Repository URL"
+                placeholder="https://github.com/owner/repo or owner/repo"
+                value={githubUrl}
+                onChange={(e) => setGithubUrl(e.target.value)}
+                helperText="Enter the full GitHub URL or owner/repo format"
+                disabled={isImporting}
+              />
+            </div>
+
+            <div>
+              <Input
+                label="GitHub Token (Optional)"
+                type="password"
+                placeholder="ghp_xxxxxxxxxxxx"
+                value={githubToken}
+                onChange={(e) => setGithubToken(e.target.value)}
+                helperText="Required for private repositories. Create one at github.com/settings/tokens"
+                disabled={isImporting}
+              />
+            </div>
+
+            {importError && (
+              <div className="bg-red-50 border border-red-200 rounded-md p-3">
+                <p className="text-sm text-red-800">{importError}</p>
+              </div>
+            )}
+
+            <Button
+              type="button"
+              onClick={handleGitHubImport}
+              isLoading={isImporting}
+              disabled={isImporting || !githubUrl.trim()}
+              className="w-full"
+            >
+              {isImporting ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Analyzing Repository...
+                </>
+              ) : (
+                <>
+                  <Github className="w-4 h-4 mr-2" />
+                  Import Repository
+                </>
+              )}
+            </Button>
+          </div>
+        )}
+      </div>
 
       {/* Projects picker + save status */}
       <div className="flex items-center justify-between">

@@ -99,6 +99,7 @@ model Analysis {
   personas            Persona[]
   positioningData     PositioningData[]
   simulatedReviews    SimulatedReview[]
+  marketIntelligence  MarketIntelligence?
 
   @@index([userId])
   @@index([status])
@@ -315,6 +316,29 @@ model SimulatedReview {
   @@index([rating])
   @@index([sentiment])
   @@map("simulated_reviews")
+}
+
+// Market Intelligence - Comprehensive industry and competitive insights
+model MarketIntelligence {
+  id                      String   @id @default(uuid())
+  analysisId              String   @unique @map("analysis_id")
+  industryOverview        String   @map("industry_overview")
+  marketSize              String?  @map("market_size")
+  marketGrowth            String?  @map("market_growth")
+  marketTrends            Json?    @map("market_trends")
+  competitiveLandscape    String   @map("competitive_landscape")
+  marketDynamics          Json?    @map("market_dynamics")
+  barriersToEntry         Json?    @map("barriers_to_entry")
+  opportunities           Json?    @map("opportunities")
+  threats                 Json?    @map("threats")
+  strategicRecommendations String  @map("strategic_recommendations")
+  keySuccessFactors       Json?    @map("key_success_factors")
+  createdAt               DateTime @default(now()) @map("created_at")
+
+  analysis                Analysis @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+
+  @@index([analysisId])
+  @@map("market_intelligence")
 }
 
 // Projects saved by users as drafts or reusable templates for analyses

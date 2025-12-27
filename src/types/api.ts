@@ -4,7 +4,6 @@ import type {
   Competitor,
   CompetitorType,
   UserFeature,
-  MVPPriority,
   GapAnalysisItem,
   BlueOceanInsight,
   Persona,
@@ -13,6 +12,7 @@ import type {
   SimulatedReview,
   ComparisonParameter,
   FeatureMatrixScore,
+  MarketIntelligence,
 } from './database';
 
 // API Request Types
@@ -55,6 +55,7 @@ export interface FullAnalysisResponse {
   personas: Persona[];
   positioningData: PositioningData[];
   simulatedReviews: SimulatedReview[];
+  marketIntelligence: MarketIntelligence | null;
 }
 
 export interface AnalysisListItem {
