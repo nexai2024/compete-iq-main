@@ -286,6 +286,3 @@ export const MarketIntelligenceComponent: React.FC<MarketIntelligenceProps> = ({
 };
 
 
-
-
-
