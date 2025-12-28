@@ -15,15 +15,16 @@ export async function generateMarketIntelligence(
   competitors: (Competitor & { features: CompetitorFeature[] })[]
 ): Promise<MarketIntelligenceData> {
   try {
+    type CompetitorWithFeatures = typeof competitors[0];
     const competitorsSummary = competitors
-      .map((c) => {
-        const features = c.features.map((f) => f.featureName).join(', ');
+      .map((c: CompetitorWithFeatures) => {
+        const features = c.features.map((f: { featureName: string }) => f.featureName).join(', ');
         return `${c.name} (${c.type}): ${c.description || 'No description'}. Features: ${features || 'N/A'}. Market Position: ${c.marketPosition || 'N/A'}. Pricing: ${c.pricingModel || 'N/A'}`;
       })
       .join('\n\n');
 
     const userFeaturesSummary = analysis.userFeatures
-      .map((f) => `${f.featureName}: ${f.featureDescription || 'No description'}`)
+      .map((f: UserFeature) => `${f.featureName}: ${f.featureDescription || 'No description'}`)
       .join('\n');
 
     const response = await openai.chat.completions.create({

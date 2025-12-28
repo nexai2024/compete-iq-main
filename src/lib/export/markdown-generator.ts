@@ -42,15 +42,17 @@ export function generateMarkdownReport(data: FullAnalysisResponse): string {
 
   // Feature Comparison Matrix
   markdown += `## Feature Comparison Matrix\n\n`;
-  markdown += `| Entity | ${comparisonParameters.map((p) => p.parameterName).join(' | ')} |\n`;
+  type ComparisonParameter = typeof comparisonParameters[0];
+  markdown += `| Entity | ${comparisonParameters.map((p: ComparisonParameter) => p.parameterName).join(' | ')} |\n`;
   markdown += `|--------|${comparisonParameters.map(() => '---').join('|')}|\n`;
 
   // User app row
   markdown += `| **${analysis.appName}** (Your App) | `;
+  type FeatureMatrixScore = typeof featureMatrixScores[0];
   markdown += comparisonParameters
-    .map((param) => {
+    .map((param: ComparisonParameter) => {
       const score = featureMatrixScores.find(
-        (s) => s.parameterId === param.id && s.entityType === 'user_app'
+        (s: FeatureMatrixScore) => s.parameterId === param.id && s.entityType === 'user_app'
       );
       return score ? score.score.toFixed(1) : 'N/A';
     })
@@ -58,12 +60,13 @@ export function generateMarkdownReport(data: FullAnalysisResponse): string {
   markdown += ` |\n`;
 
   // Competitor rows
-  competitors.forEach((competitor) => {
+  type CompetitorWithFeatures = typeof competitors[0];
+  competitors.forEach((competitor: CompetitorWithFeatures) => {
     markdown += `| ${competitor.name} | `;
     markdown += comparisonParameters
-      .map((param) => {
+      .map((param: ComparisonParameter) => {
         const score = featureMatrixScores.find(
-          (s) =>
+          (s: FeatureMatrixScore) =>
             s.parameterId === param.id &&
             s.entityType === 'competitor' &&
             s.entityId === competitor.id
@@ -81,7 +84,8 @@ export function generateMarkdownReport(data: FullAnalysisResponse): string {
   markdown += `## Competitive Positioning\n\n`;
   markdown += `**Value vs Complexity Analysis**\n\n`;
 
-  const userAppPositioning = positioningData.find((p) => p.entityType === 'user_app');
+  type PositioningDataItem = typeof positioningData[0];
+  const userAppPositioning = positioningData.find((p: PositioningDataItem) => p.entityType === 'user_app');
   if (userAppPositioning) {
     markdown += `### Your App\n\n`;
     markdown += `- Value Score: ${userAppPositioning.valueScore}/10\n`;
@@ -91,8 +95,8 @@ export function generateMarkdownReport(data: FullAnalysisResponse): string {
 
   markdown += `### Competitors\n\n`;
   positioningData
-    .filter((p) => p.entityType === 'competitor')
-    .forEach((pos) => {
+    .filter((p: PositioningDataItem) => p.entityType === 'competitor')
+    .forEach((pos: PositioningDataItem) => {
       markdown += `- **${pos.entityName}:** Value ${pos.valueScore}/10, Complexity ${pos.complexityScore}/10 - ${pos.quadrant}\n`;
     });
 
@@ -104,13 +108,14 @@ export function generateMarkdownReport(data: FullAnalysisResponse): string {
   // MVP Roadmap
   markdown += `### MVP Feature Roadmap\n\n`;
 
-  const p0Features = userFeatures.filter((f) => f.mvpPriority === 'P0');
-  const p1Features = userFeatures.filter((f) => f.mvpPriority === 'P1');
-  const p2Features = userFeatures.filter((f) => f.mvpPriority === 'P2');
+  type UserFeature = typeof userFeatures[0];
+  const p0Features = userFeatures.filter((f: UserFeature) => f.mvpPriority === 'P0');
+  const p1Features = userFeatures.filter((f: UserFeature) => f.mvpPriority === 'P1');
+  const p2Features = userFeatures.filter((f: UserFeature) => f.mvpPriority === 'P2');
 
   if (p0Features.length > 0) {
     markdown += `#### P0: Must Have\n\n`;
-    p0Features.forEach((feature) => {
+    p0Features.forEach((feature: UserFeature) => {
       markdown += `- **${feature.featureName}**\n`;
       if (feature.featureDescription)
         markdown += `  - ${feature.featureDescription}\n`;
@@ -122,7 +127,7 @@ export function generateMarkdownReport(data: FullAnalysisResponse): string {
 
   if (p1Features.length > 0) {
     markdown += `#### P1: Should Have\n\n`;
-    p1Features.forEach((feature) => {
+    p1Features.forEach((feature: UserFeature) => {
       markdown += `- **${feature.featureName}**\n`;
       if (feature.featureDescription)
         markdown += `  - ${feature.featureDescription}\n`;
@@ -134,7 +139,7 @@ export function generateMarkdownReport(data: FullAnalysisResponse): string {
 
   if (p2Features.length > 0) {
     markdown += `#### P2: Nice to Have\n\n`;
-    p2Features.forEach((feature) => {
+    p2Features.forEach((feature: UserFeature) => {
       markdown += `- **${feature.featureName}**\n`;
       if (feature.featureDescription)
         markdown += `  - ${feature.featureDescription}\n`;
@@ -145,10 +150,11 @@ export function generateMarkdownReport(data: FullAnalysisResponse): string {
   }
 
   // Competitive Deficits
-  const deficits = gapAnalysisItems.filter((g) => g.type === 'deficit');
+  type GapAnalysisItem = typeof gapAnalysisItems[0];
+  const deficits = gapAnalysisItems.filter((g: GapAnalysisItem) => g.type === 'deficit');
   if (deficits.length > 0) {
     markdown += `### Competitive Deficits\n\n`;
-    deficits.forEach((deficit) => {
+    deficits.forEach((deficit: GapAnalysisItem) => {
       markdown += `#### ${deficit.title} - ${deficit.severity}\n\n`;
       markdown += `${deficit.description}\n\n`;
       const affectedCompetitors = deficit.affectedCompetitors as string[];
@@ -160,10 +166,10 @@ export function generateMarkdownReport(data: FullAnalysisResponse): string {
   }
 
   // Unique Standouts
-  const standouts = gapAnalysisItems.filter((g) => g.type === 'standout');
+  const standouts = gapAnalysisItems.filter((g: GapAnalysisItem) => g.type === 'standout');
   if (standouts.length > 0) {
     markdown += `### Unique Standouts\n\n`;
-    standouts.forEach((standout) => {
+    standouts.forEach((standout: GapAnalysisItem) => {
       markdown += `#### ${standout.title} - Opportunity Score: ${standout.opportunityScore}/100\n\n`;
       markdown += `${standout.description}\n\n`;
       markdown += `**Recommendation:** ${standout.recommendation}\n\n`;

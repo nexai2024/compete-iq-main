@@ -24,12 +24,14 @@ export async function prioritizeFeatures(
       .map((f, idx) => `Feature ${idx + 1}: ${f.featureName}${f.featureDescription ? ` - ${f.featureDescription}` : ''}`)
       .join('\n');
 
+    type CompetitorWithFeatures = typeof competitors[0];
     const competitorsSummary = competitors
-      .map((c) => `${c.name}: ${c.features.length} features`)
+      .map((c: CompetitorWithFeatures) => `${c.name}: ${c.features.length} features`)
       .join(', ');
 
+    type DeficitData = typeof gapAnalysis.deficits[0];
     const deficitsSummary = gapAnalysis.deficits
-      .map((d) => `${d.title} (${d.severity})`)
+      .map((d: DeficitData) => `${d.title} (${d.severity})`)
       .join(', ');
 
     const response = await openai.chat.completions.create({

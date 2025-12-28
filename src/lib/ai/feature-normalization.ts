@@ -36,13 +36,13 @@ export async function normalizeFeatures(
   try {
     // Prepare all features for analysis
     const allFeatures: FeatureInput[] = [
-      ...userFeatures.map((f) => ({
+      ...userFeatures.map((f: UserFeature) => ({
         id: f.id,
         name: f.featureName,
         description: f.featureDescription,
         type: 'user' as const,
       })),
-      ...competitorFeatures.map((f) => ({
+      ...competitorFeatures.map((f: CompetitorFeature) => ({
         id: f.id,
         name: f.featureName,
         description: f.featureDescription,
@@ -158,12 +158,12 @@ Important:
     console.error('Error normalizing features:', error);
     // Fallback: return each feature as its own group
     return [
-      ...userFeatures.map((f) => ({
+      ...userFeatures.map((f: UserFeature) => ({
         canonicalName: f.featureName,
         description: f.featureDescription || '',
         featureIds: [f.id],
       })),
-      ...competitorFeatures.map((f) => ({
+      ...competitorFeatures.map((f: CompetitorFeature) => ({
         canonicalName: f.featureName,
         description: f.featureDescription || '',
         featureIds: [f.id],
@@ -184,7 +184,7 @@ export function getFeaturesByNormalizedGroup<T extends { normalizedGroupId: stri
 
   for (const feature of features) {
     if (feature.normalizedGroupId) {
-      const group = normalizedGroups.find((g) => g.id === feature.normalizedGroupId);
+      const group = normalizedGroups.find((g: { id: string; canonicalName: string }) => g.id === feature.normalizedGroupId);
       const groupName = group?.canonicalName || 'Uncategorized';
       
       if (!grouped.has(groupName)) {

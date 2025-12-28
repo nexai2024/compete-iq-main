@@ -16,7 +16,7 @@ export async function searchCompetitors(
     // Build search query
     const keyFeatures = analysis.userFeatures
       .slice(0, 5)
-      .map((f) => f.featureName)
+      .map((f: UserFeature) => f.featureName)
       .join(', ');
 
     const searchQuery = `Find competitors and alternatives for ${analysis.appName}, which is ${analysis.description.substring(0, 200)}. Target audience: ${analysis.targetAudience}. Similar apps in the market that offer ${keyFeatures}.`;
@@ -83,8 +83,8 @@ Return as a JSON object with a "competitors" array.`,
 
     // Validate and filter results
     const competitors = parsedData.competitors || [];
-    const directCompetitors = competitors.filter((c) => c.type === 'direct').slice(0, 4);
-    const indirectCompetitors = competitors.filter((c) => c.type === 'indirect').slice(0, 2);
+    const directCompetitors = competitors.filter((c: CompetitorSearchResult) => c.type === 'direct').slice(0, 4);
+    const indirectCompetitors = competitors.filter((c: CompetitorSearchResult) => c.type === 'indirect').slice(0, 2);
 
     return [...directCompetitors, ...indirectCompetitors];
   } catch (error) {

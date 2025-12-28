@@ -20,11 +20,12 @@ export async function analyzeGaps(
 ): Promise<GapAnalysisResult> {
   try {
     const userFeaturesList = userFeatures
-      .map((f) => `- ${f.featureName}${f.featureDescription ? `: ${f.featureDescription}` : ''}`)
+      .map((f: UserFeature) => `- ${f.featureName}${f.featureDescription ? `: ${f.featureDescription}` : ''}`)
       .join('\n');
 
+    type CompetitorWithFeatures = typeof competitors[0];
     const competitorFeaturesList = competitors
-      .map((c) => `${c.name}:\n${c.features.map((f) => `  - ${f.featureName}`).join('\n')}`)
+      .map((c: CompetitorWithFeatures) => `${c.name}:\n${c.features.map((f: CompetitorFeature) => `  - ${f.featureName}`).join('\n')}`)
       .join('\n\n');
 
     // Identify deficits
@@ -126,16 +127,19 @@ export async function discoverBlueOcean(
   gapAnalysis: GapAnalysisResult
 ): Promise<BlueOceanData> {
   try {
+    type CompetitorWithFeatures = typeof competitors[0];
     const competitorsSummary = competitors
-      .map((c) => `${c.name}: ${c.description || 'No description'}`)
+      .map((c: CompetitorWithFeatures) => `${c.name}: ${c.description || 'No description'}`)
       .join('\n');
 
+    type DeficitData = typeof gapAnalysis.deficits[0];
     const deficitsSummary = gapAnalysis.deficits
-      .map((d) => `- ${d.title} (${d.severity}): ${d.description}`)
+      .map((d: DeficitData) => `- ${d.title} (${d.severity}): ${d.description}`)
       .join('\n');
 
+    type StandoutData = typeof gapAnalysis.standouts[0];
     const standoutsSummary = gapAnalysis.standouts
-      .map((s) => `- ${s.title} (score: ${s.opportunity_score}): ${s.description}`)
+      .map((s: StandoutData) => `- ${s.title} (score: ${s.opportunity_score}): ${s.description}`)
       .join('\n');
 
     const response = await openai.chat.completions.create({

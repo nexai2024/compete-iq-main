@@ -15,14 +15,14 @@ export async function generatePositioningData(
 ): Promise<PositioningMapDataPoint[]> {
   try {
     const userFeaturesList = analysis.userFeatures
-      .map((f) => `- ${f.featureName}${f.featureDescription ? `: ${f.featureDescription}` : ''}`)
+      .map((f: UserFeature) => `- ${f.featureName}${f.featureDescription ? `: ${f.featureDescription}` : ''}`)
       .join('\n');
 
     const competitorsWithFeatures = competitors
       .map(
-        (c) =>
+        (c: Competitor & { features: CompetitorFeature[] }) =>
           `${c.name}:
-Features: ${c.features.map((f) => f.featureName).join(', ')}`
+Features: ${c.features.map((f: CompetitorFeature) => f.featureName).join(', ')}`
       )
       .join('\n\n');
 

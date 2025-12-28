@@ -199,7 +199,7 @@ ${repoInfo.packageJson ? `Package Config:\n${repoInfo.packageJson.substring(0, 2
 
 Main Source Files:
 ${repoInfo.mainFiles
-  .map((f) => `\n${f.path}:\n${f.content.substring(0, 2000)}`)
+  .map((f: { path: string; content: string }) => `\n${f.path}:\n${f.content.substring(0, 2000)}`)
   .join('\n---\n')}
 `;
 

@@ -47,9 +47,9 @@ async function getNormalizedFeatureSummary(
   const summaryParts: string[] = [];
 
   // Add grouped features
-  groupedFeatures.forEach((groupFeatures, groupName) => {
+  groupedFeatures.forEach((groupFeatures: (UserFeature | CompetitorFeature)[], groupName: string) => {
     const featureDetails = groupFeatures
-      .map((f) => `  - ${f.featureName}${f.featureDescription ? `: ${f.featureDescription}` : ''}`)
+      .map((f: UserFeature | CompetitorFeature) => `  - ${f.featureName}${f.featureDescription ? `: ${f.featureDescription}` : ''}`)
       .join('\n');
     summaryParts.push(`${groupName}:\n${featureDetails}`);
   });
@@ -57,7 +57,7 @@ async function getNormalizedFeatureSummary(
   // Add ungrouped features
   if (ungroupedFeatures.length > 0) {
     const ungroupedDetails = ungroupedFeatures
-      .map((f) => `  - ${f.featureName}${f.featureDescription ? `: ${f.featureDescription}` : ''}`)
+      .map((f: UserFeature | CompetitorFeature) => `  - ${f.featureName}${f.featureDescription ? `: ${f.featureDescription}` : ''}`)
       .join('\n');
     summaryParts.push(`Other Features:\n${ungroupedDetails}`);
   }
@@ -79,7 +79,8 @@ export async function generateComparisonParameters(
       analysis.id
     );
     
-    const competitorsList = competitors.map((c) => c.name).join(', ');
+    type CompetitorWithFeatures = typeof competitors[0];
+    const competitorsList = competitors.map((c: CompetitorWithFeatures) => c.name).join(', ');
 
     const response = await openai.chat.completions.create({
       model: 'gpt-4o',

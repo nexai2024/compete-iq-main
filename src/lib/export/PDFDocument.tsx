@@ -65,8 +65,9 @@ export const AnalysisPDFDocument = ({ data }: { data: FullAnalysisResponse }) =>
   const { analysis, competitors, userFeatures, gapAnalysisItems, blueOceanInsight, personas } =
     data;
 
-  const deficits = gapAnalysisItems.filter((g) => g.type === 'deficit');
-  const standouts = gapAnalysisItems.filter((g) => g.type === 'standout');
+  type GapAnalysisItem = typeof gapAnalysisItems[0];
+  const deficits = gapAnalysisItems.filter((g: GapAnalysisItem) => g.type === 'deficit');
+  const standouts = gapAnalysisItems.filter((g: GapAnalysisItem) => g.type === 'standout');
 
   return (
     <Document>
@@ -126,11 +127,11 @@ export const AnalysisPDFDocument = ({ data }: { data: FullAnalysisResponse }) =>
           {/* P0 Features */}
           <View style={{ marginBottom: 15 }}>
             <Text style={styles.subsectionTitle}>
-              P0: Must Have ({userFeatures.filter((f) => f.mvpPriority === 'P0').length})
+              P0: Must Have ({userFeatures.filter((f: typeof userFeatures[0]) => f.mvpPriority === 'P0').length})
             </Text>
             {userFeatures
-              .filter((f) => f.mvpPriority === 'P0')
-              .map((feature) => (
+              .filter((f: typeof userFeatures[0]) => f.mvpPriority === 'P0')
+              .map((feature: typeof userFeatures[0]) => (
                 <View key={feature.id} style={styles.listItem}>
                   <Text style={styles.text}>• {feature.featureName}</Text>
                   {feature.featureDescription && (
@@ -145,11 +146,11 @@ export const AnalysisPDFDocument = ({ data }: { data: FullAnalysisResponse }) =>
           {/* P1 Features */}
           <View style={{ marginBottom: 15 }}>
             <Text style={styles.subsectionTitle}>
-              P1: Should Have ({userFeatures.filter((f) => f.mvpPriority === 'P1').length})
+              P1: Should Have ({userFeatures.filter((f: typeof userFeatures[0]) => f.mvpPriority === 'P1').length})
             </Text>
             {userFeatures
-              .filter((f) => f.mvpPriority === 'P1')
-              .map((feature) => (
+              .filter((f: typeof userFeatures[0]) => f.mvpPriority === 'P1')
+              .map((feature: typeof userFeatures[0]) => (
                 <View key={feature.id} style={styles.listItem}>
                   <Text style={styles.text}>• {feature.featureName}</Text>
                 </View>
@@ -159,11 +160,11 @@ export const AnalysisPDFDocument = ({ data }: { data: FullAnalysisResponse }) =>
           {/* P2 Features */}
           <View style={{ marginBottom: 15 }}>
             <Text style={styles.subsectionTitle}>
-              P2: Nice to Have ({userFeatures.filter((f) => f.mvpPriority === 'P2').length})
+              P2: Nice to Have ({userFeatures.filter((f: typeof userFeatures[0]) => f.mvpPriority === 'P2').length})
             </Text>
             {userFeatures
-              .filter((f) => f.mvpPriority === 'P2')
-              .map((feature) => (
+              .filter((f: typeof userFeatures[0]) => f.mvpPriority === 'P2')
+              .map((feature: typeof userFeatures[0]) => (
                 <View key={feature.id} style={styles.listItem}>
                   <Text style={styles.text}>• {feature.featureName}</Text>
                 </View>

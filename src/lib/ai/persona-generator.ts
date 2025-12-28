@@ -23,7 +23,7 @@ export async function generatePersonas(
   for (const personaType of personaTypes) {
     try {
       const userFeaturesSummary = analysis.userFeatures
-        .map((f) => f.featureName)
+        .map((f: UserFeature) => f.featureName)
         .join(', ');
 
       const response = await openai.chat.completions.create({
@@ -109,11 +109,12 @@ export async function generateSimulatedReviews(
 ): Promise<SimulatedReviewData[]> {
   try {
     const userFeaturesList = analysis.userFeatures
-      .map((f) => f.featureName)
+      .map((f: UserFeature) => f.featureName)
       .join(', ');
 
+    type CompetitorWithFeatures = typeof competitors[0];
     const competitorsSummary = competitors
-      .map((c) => `${c.name}: ${c.description}`)
+      .map((c: CompetitorWithFeatures) => `${c.name}: ${c.description}`)
       .slice(0, 3)
       .join('\n');
 
