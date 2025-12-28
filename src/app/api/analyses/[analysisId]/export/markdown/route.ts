@@ -63,7 +63,8 @@ export async function GET(
     }
 
     // 4. Enrich positioning data with competitor type
-    const enrichedPositioningData = analysis.positioningData.map((position) => {
+    type PositioningDataWithCompetitor = typeof analysis.positioningData[0];
+    const enrichedPositioningData = analysis.positioningData.map((position: PositioningDataWithCompetitor) => {
       // Get competitor type if this is a competitor entity
       let competitorType: CompetitorType | undefined = undefined;
       if (position.entityType === 'competitor' && position.entityId) {
