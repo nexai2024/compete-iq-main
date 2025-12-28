@@ -41,8 +41,9 @@ export async function POST(request: NextRequest) {
     });
 
     // 4. Create user features
+    type FeatureInput = typeof features[0];
     await prisma.userFeature.createMany({
-      data: features.map((feature, index) => ({
+      data: features.map((feature: FeatureInput, index: number) => ({
         analysisId: analysis.id,
         featureName: feature.name,
         featureDescription: feature.description || null,
@@ -122,7 +123,8 @@ export async function GET(request: NextRequest) {
     });
 
     // 5. Transform to response format
-    const analysisListItems: AnalysisListItem[] = analyses.map((analysis) => ({
+    type AnalysisWithCount = typeof analyses[0];
+    const analysisListItems: AnalysisListItem[] = analyses.map((analysis: AnalysisWithCount) => ({
       id: analysis.id,
       appName: analysis.appName,
       targetAudience: analysis.targetAudience,

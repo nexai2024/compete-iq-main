@@ -81,9 +81,10 @@ export async function POST(
     });
 
     // 7. Create OpenAI chat completion with streaming
+    type MessageHistoryItem = typeof messageHistory[0];
     const messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }> = [
       { role: 'system', content: persona.systemPrompt },
-      ...messageHistory.map((m) => ({
+      ...messageHistory.map((m: MessageHistoryItem) => ({
         role: m.role as 'user' | 'assistant',
         content: m.message,
       })),

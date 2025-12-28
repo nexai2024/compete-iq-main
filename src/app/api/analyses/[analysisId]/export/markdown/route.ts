@@ -68,7 +68,7 @@ export async function GET(
       // Get competitor type if this is a competitor entity
       let competitorType: CompetitorType | undefined = undefined;
       if (position.entityType === 'competitor' && position.entityId) {
-        const competitor = analysis.competitors.find((c) => c.id === position.entityId);
+        const competitor = analysis.competitors.find((c: typeof analysis.competitors[0]) => c.id === position.entityId);
         competitorType = competitor?.type || undefined;
       }
       
