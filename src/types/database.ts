@@ -13,6 +13,7 @@ export type {
   PositioningData,
   SimulatedReview,
   MarketIntelligence,
+  NormalizedFeatureGroup,
   AnalysisStatus,
   CompetitorType,
   MVPPriority,

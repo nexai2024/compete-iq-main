@@ -76,7 +76,7 @@ export function FeatureMatrix({
                 className="border border-gray-300 px-3 py-2 text-center text-xs font-semibold text-gray-900 min-w-[80px]"
                 title={param.parameterDescription ?? undefined}
               >
-                <div className="writing-mode-vertical-rl transform rotate-180">
+                <div className="writing-mode-vertical-rl">
                   {param.parameterName}
                 </div>
               </th>

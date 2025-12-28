@@ -6,6 +6,7 @@ import { prioritizeFeatures } from './mvp-scoper';
 import { generatePersonas, generateSimulatedReviews } from './persona-generator';
 import { generatePositioningData } from './positioning-map';
 import { generateMarketIntelligence } from './market-intelligence';
+import { normalizeFeatures } from './feature-normalization';
 
 /**
  * Main AI processing pipeline
@@ -78,10 +79,77 @@ export async function processAnalysis(analysisId: string): Promise<void> {
 
     await updateStage(analysisId, 'competitors_complete');
 
+    // Stage 1.5: Feature Normalization - Group semantically similar features
+    await updateStage(analysisId, 'normalizing_features');
+
+    // Fetch all features (user + competitor) for normalization
+    const allUserFeatures = await prisma.userFeature.findMany({
+      where: { analysisId },
+    });
+
+    const allCompetitorFeatures = await prisma.competitorFeature.findMany({
+      where: {
+        competitor: {
+          analysisId,
+        },
+      },
+    });
+
+    // Normalize features using AI
+    const normalizedGroups = await normalizeFeatures(
+      allUserFeatures,
+      allCompetitorFeatures
+    );
+
+    // Save normalized groups to database
+    const savedNormalizedGroups = await Promise.all(
+      normalizedGroups.map((group) =>
+        prisma.normalizedFeatureGroup.create({
+          data: {
+            analysisId,
+            canonicalName: group.canonicalName,
+            description: group.description,
+          },
+        })
+      )
+    );
+
+    // Create a map of feature ID to normalized group ID
+    const featureToGroupMap = new Map<string, string>();
+    for (let i = 0; i < normalizedGroups.length; i++) {
+      const group = normalizedGroups[i];
+      const savedGroup = savedNormalizedGroups[i];
+      for (const featureId of group.featureIds) {
+        featureToGroupMap.set(featureId, savedGroup.id);
+      }
+    }
+
+    // Update user features with normalized group IDs
+    for (const userFeature of allUserFeatures) {
+      const normalizedGroupId = featureToGroupMap.get(userFeature.id);
+      if (normalizedGroupId) {
+        await prisma.userFeature.update({
+          where: { id: userFeature.id },
+          data: { normalizedGroupId },
+        });
+      }
+    }
+
+    // Update competitor features with normalized group IDs
+    for (const competitorFeature of allCompetitorFeatures) {
+      const normalizedGroupId = featureToGroupMap.get(competitorFeature.id);
+      if (normalizedGroupId) {
+        await prisma.competitorFeature.update({
+          where: { id: competitorFeature.id },
+          data: { normalizedGroupId },
+        });
+      }
+    }
+
     // Stage 2: Feature Analysis & Matrix Generation
     await updateStage(analysisId, 'features');
 
-    // Fetch complete competitor data with features
+    // Fetch complete competitor data with features (now with normalized groups)
     const competitorsWithFeatures = await prisma.competitor.findMany({
       where: { analysisId },
       include: { features: true },
@@ -117,7 +185,8 @@ export async function processAnalysis(analysisId: string): Promise<void> {
         'user_app',
         null,
         analysis.userFeatures,
-        []
+        [],
+        analysisId
       );
 
       await prisma.featureMatrixScore.create({
@@ -144,7 +213,8 @@ export async function processAnalysis(analysisId: string): Promise<void> {
           'competitor',
           competitor.id,
           [],
-          competitor.features
+          competitor.features,
+          analysisId
         );
 
         await prisma.featureMatrixScore.create({

@@ -75,18 +75,39 @@ export async function GET(
     }
 
     // 4. Enrich positioning data with competitor type
-    const enrichedPositioningData = analysis.positioningData.map((position) => ({
-      ...position,
-      competitorType: position.competitor?.type || undefined,
+    const enrichedPositioningData = analysis.positioningData.map((position) => {
+      // Get competitor type if this is a competitor entity
+      let competitorType: 'direct' | 'indirect' | undefined = undefined;
+      if (position.entityType === 'competitor' && position.entityId) {
+        const competitor = analysis.competitors.find((c) => c.id === position.entityId);
+        competitorType = competitor?.type || undefined;
+      }
+      
+      return {
+        ...position,
+        competitorType,
+      };
+    });
+
+    // 5. Flatten feature matrix scores (remove nested relations for client)
+    const flattenedScores = analysis.featureMatrixScores.map((score) => ({
+      id: score.id,
+      analysisId: score.analysisId,
+      parameterId: score.parameterId,
+      entityType: score.entityType,
+      entityId: score.entityId,
+      score: score.score,
+      reasoning: score.reasoning,
+      createdAt: score.createdAt,
     }));
 
-    // 5. Return full analysis data
+    // 6. Return full analysis data
     const response: FullAnalysisResponse = {
       analysis,
       userFeatures: analysis.userFeatures,
       competitors: analysis.competitors,
       comparisonParameters: analysis.comparisonParameters,
-      featureMatrixScores: analysis.featureMatrixScores,
+      featureMatrixScores: flattenedScores,
       gapAnalysisItems: analysis.gapAnalysisItems,
       blueOceanInsight: analysis.blueOceanInsight,
       personas: analysis.personas,

@@ -63,10 +63,19 @@ export async function GET(
     }
 
     // 4. Enrich positioning data with competitor type
-    const enrichedPositioningData = analysis.positioningData.map((position: { competitor: { type: CompetitorType; }; }) => ({
-      ...position,
-      competitorType: position.competitor?.type || undefined,
-    }));
+    const enrichedPositioningData = analysis.positioningData.map((position) => {
+      // Get competitor type if this is a competitor entity
+      let competitorType: CompetitorType | undefined = undefined;
+      if (position.entityType === 'competitor' && position.entityId) {
+        const competitor = analysis.competitors.find((c) => c.id === position.entityId);
+        competitorType = competitor?.type || undefined;
+      }
+      
+      return {
+        ...position,
+        competitorType,
+      };
+    });
 
     // 5. Generate markdown report
     const markdown = generateMarkdownReport({

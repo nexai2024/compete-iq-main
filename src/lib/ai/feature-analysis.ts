@@ -1,10 +1,69 @@
 import OpenAI from 'openai';
+import { prisma } from '@/lib/db/prisma';
 import type { Analysis, UserFeature, Competitor, CompetitorFeature } from '@/types/database';
 import type { ComparisonParameterData, FeatureScoreData } from '@/types/analysis';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
+
+/**
+ * Get normalized feature summary for a set of features
+ * Groups features by their normalized groups and returns a summary
+ */
+async function getNormalizedFeatureSummary(
+  features: (UserFeature | CompetitorFeature)[],
+  analysisId: string
+): Promise<string> {
+  // Fetch normalized groups for this analysis
+  const normalizedGroups = await prisma.normalizedFeatureGroup.findMany({
+    where: { analysisId },
+  });
+
+  // Group features by normalized group
+  const groupedFeatures = new Map<string, (UserFeature | CompetitorFeature)[]>();
+  const ungroupedFeatures: (UserFeature | CompetitorFeature)[] = [];
+
+  for (const feature of features) {
+    // Type guard to check if feature has normalizedGroupId
+    const normalizedGroupId = 'normalizedGroupId' in feature ? feature.normalizedGroupId : null;
+    if (normalizedGroupId) {
+      const group = normalizedGroups.find((g: { id: string }) => g.id === normalizedGroupId);
+      if (group) {
+        const groupName = group.canonicalName;
+        if (!groupedFeatures.has(groupName)) {
+          groupedFeatures.set(groupName, []);
+        }
+        groupedFeatures.get(groupName)!.push(feature);
+      } else {
+        ungroupedFeatures.push(feature);
+      }
+    } else {
+      ungroupedFeatures.push(feature);
+    }
+  }
+
+  // Build summary with normalized groups
+  const summaryParts: string[] = [];
+
+  // Add grouped features
+  groupedFeatures.forEach((groupFeatures, groupName) => {
+    const featureDetails = groupFeatures
+      .map((f) => `  - ${f.featureName}${f.featureDescription ? `: ${f.featureDescription}` : ''}`)
+      .join('\n');
+    summaryParts.push(`${groupName}:\n${featureDetails}`);
+  });
+
+  // Add ungrouped features
+  if (ungroupedFeatures.length > 0) {
+    const ungroupedDetails = ungroupedFeatures
+      .map((f) => `  - ${f.featureName}${f.featureDescription ? `: ${f.featureDescription}` : ''}`)
+      .join('\n');
+    summaryParts.push(`Other Features:\n${ungroupedDetails}`);
+  }
+
+  return summaryParts.join('\n\n');
+}
 
 /**
  * Generate comparison parameters based on app type and competitors
@@ -14,7 +73,12 @@ export async function generateComparisonParameters(
   competitors: (Competitor & { features: CompetitorFeature[] })[]
 ): Promise<ComparisonParameterData[]> {
   try {
-    const userFeaturesList = analysis.userFeatures.map((f) => f.featureName).join(', ');
+    // Get normalized feature summary for user features
+    const userFeaturesSummary = await getNormalizedFeatureSummary(
+      analysis.userFeatures,
+      analysis.id
+    );
+    
     const competitorsList = competitors.map((c) => c.name).join(', ');
 
     const response = await openai.chat.completions.create({
@@ -28,7 +92,8 @@ export async function generateComparisonParameters(
           role: 'user',
           content: `App Category: ${analysis.appName}
 Target Audience: ${analysis.targetAudience}
-User's Features: ${userFeaturesList}
+User's Features (normalized and grouped):
+${userFeaturesSummary}
 Competitors: ${competitorsList}
 
 Determine 10 key parameters to compare these apps on. Parameters should be:
@@ -37,14 +102,18 @@ Determine 10 key parameters to compare these apps on. Parameters should be:
 - Important to the target audience
 - Mix of functional and non-functional (UX, pricing, performance, etc.)
 
-Return as JSON array:
-[
-  {
-    "name": "parameter name (e.g., 'Real-time Collaboration')",
-    "description": "what this measures",
-    "weight": 0.X  // importance weight 0.0-1.0, all should sum to ~1.0
-  }
-]`,
+Return as JSON object with "parameters" array:
+{
+  "parameters": [
+    {
+      "name": "parameter name (e.g., 'Real-time Collaboration')",
+      "description": "what this measures",
+      "weight": 0.1
+    }
+  ]
+}
+
+All weights should sum to approximately 1.0.`,
         },
       ],
       temperature: 0.4,
@@ -79,12 +148,14 @@ export async function scoreEntities(
   entityType: 'user_app' | 'competitor',
   entityId: string | null,
   userFeatures: UserFeature[],
-  competitorFeatures: CompetitorFeature[]
+  competitorFeatures: CompetitorFeature[],
+  analysisId: string
 ): Promise<FeatureScoreData> {
   try {
+    // Get normalized feature summary
     const features = entityType === 'user_app'
-      ? userFeatures.map((f) => `${f.featureName}: ${f.featureDescription || 'No description'}`).join('\n')
-      : competitorFeatures.map((f) => `${f.featureName}: ${f.featureDescription || 'No description'}`).join('\n');
+      ? await getNormalizedFeatureSummary(userFeatures, analysisId)
+      : await getNormalizedFeatureSummary(competitorFeatures, analysisId);
 
     const entityName = entityType === 'user_app' ? 'User\'s App' : 'Competitor';
 
@@ -100,7 +171,7 @@ export async function scoreEntities(
           content: `Evaluate: ${entityName}
 Parameter: ${parameterName} - ${parameterDescription}
 
-${entityType === 'user_app' ? 'User\'s planned features' : 'Competitor features'}:
+${entityType === 'user_app' ? 'User\'s features' : 'Competitor features'} (grouped by normalized capabilities):
 ${features}
 
 Score this app on the parameter from 0-10:

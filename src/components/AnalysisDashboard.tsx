@@ -19,7 +19,9 @@ import { PersonaChat } from './PersonaChat';
 import { ExportCenter } from './ExportCenter';
 import { DeleteConfirmationDialog } from './DeleteConfirmationDialog';
 import { MarketIntelligenceComponent } from './MarketIntelligence';
+import { PricingComparison } from './PricingComparison';
 import type { FullAnalysisResponse } from '@/types/api';
+import type { PositioningData } from '@/types/database';
 
 interface AnalysisDashboardProps {
   analysisId: string;
@@ -232,32 +234,98 @@ export const AnalysisDashboard: React.FC<AnalysisDashboardProps> = ({ analysisId
               {/* Section 2: Feature Matrix */}
               <div className="bg-white rounded-lg shadow-md p-6">
                 <h2 className="text-xl font-bold mb-4">Feature Comparison Matrix</h2>
-                <FeatureMatrix
+                {data.comparisonParameters.length === 0 || data.featureMatrixScores.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    <p>Feature matrix is being generated. This may take a few minutes.</p>
+                    <p className="text-sm mt-2">
+                      Parameters: {data.comparisonParameters.length} | Scores: {data.featureMatrixScores.length}
+                    </p>
+                    {analysis.status === 'processing' && (
+                      <p className="text-xs text-gray-400 mt-2">
+                        Current stage: {analysis.aiProcessingStage || 'Initializing...'}
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <FeatureMatrix
+                    userAppName={analysis.appName}
+                    competitors={competitors}
+                    parameters={data.comparisonParameters}
+                    scores={data.featureMatrixScores}
+                  />
+                )}
+              </div>
+
+              {/* Section 3: Pricing Comparison */}
+              <div className="bg-white rounded-lg shadow-md p-6">
+                <h2 className="text-xl font-bold mb-4">Pricing Comparison</h2>
+                <PricingComparison
                   userAppName={analysis.appName}
-                  competitors={competitors}
-                  parameters={data.comparisonParameters}
-                  scores={data.featureMatrixScores}
+                  userPricing={null} // TODO: Add user pricing field to analysis
+                  competitors={competitors.map((c) => ({
+                    id: c.id,
+                    name: c.name,
+                    type: c.type,
+                    pricingModel: c.pricingModel,
+                  }))}
                 />
               </div>
 
-              {/* Section 3: Positioning Map */}
+              {/* Section 4: Positioning Map */}
               <div className="bg-white rounded-lg shadow-md p-6">
                 <h2 className="text-xl font-bold mb-4">Competitive Positioning</h2>
                 <p className="text-gray-600 mb-4">Value vs Complexity analysis</p>
-                <PositioningMap
-                  userAppName={analysis.appName}
-                  positioningData={
-                    data.positioningData
-                      .filter(p => p.quadrant !== null)
-                      .map(p => ({
-                        ...p,
-                        quadrant: p.quadrant ?? ""
-                      }))
-                  }
-                />
+                {data.positioningData.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    <p>Positioning data is being generated. This may take a few minutes.</p>
+                    <p className="text-sm mt-2">Data points: {data.positioningData.length}</p>
+                    {analysis.status === 'processing' && (
+                      <p className="text-xs text-gray-400 mt-2">
+                        Current stage: {analysis.aiProcessingStage || 'Initializing...'}
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <>
+                    {process.env.NODE_ENV === 'development' && (
+                      <div className="mb-4 p-2 bg-gray-100 text-xs text-gray-600 rounded">
+                        Debug: {data.positioningData.length} positioning data points found
+                        {data.positioningData.length > 0 && (
+                          <div className="mt-1">
+                            User app: {data.positioningData.filter(p => p.entityType === 'user_app').length} | 
+                            Competitors: {data.positioningData.filter(p => p.entityType === 'competitor').length}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    <PositioningMap
+                      userAppName={analysis.appName}
+                      positioningData={data.positioningData
+                        .map((p) => {
+                          // Ensure all required fields are present
+                          // Type assertion needed because we're adding competitorType which isn't in PositioningData type
+                          const positionWithType = p as PositioningData & { competitorType?: 'direct' | 'indirect' };
+                          const mapped = {
+                            id: p.id,
+                            entityType: p.entityType as 'user_app' | 'competitor',
+                            entityName: p.entityName,
+                            valueScore: p.valueScore,
+                            complexityScore: p.complexityScore,
+                            quadrant: p.quadrant || '',
+                            competitorType: positionWithType.competitorType,
+                          };
+                          return mapped;
+                        })
+                        .filter((p) => {
+                          // Only filter out if both scores are missing
+                          return p.valueScore !== null && p.complexityScore !== null;
+                        })}
+                    />
+                  </>
+                )}
               </div>
 
-              {/* Section 4: Simulated Reviews */}
+              {/* Section 5: Simulated Reviews */}
               <div className="bg-white rounded-lg shadow-md p-6">
                 <h2 className="text-xl font-bold mb-4">
                   Simulated User Reviews ({data.simulatedReviews.length})

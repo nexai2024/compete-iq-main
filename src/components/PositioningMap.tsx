@@ -54,7 +54,7 @@ function CustomTooltip({ active, payload }: CustomTooltipProps) {
   return null;
 }
 
-export function PositioningMap({ positioningData }: PositioningMapProps) {
+export function PositioningMap({ userAppName, positioningData }: PositioningMapProps) {
   if (!positioningData || positioningData.length === 0) {
     return (
       <div className="text-center py-8 text-gray-500">
@@ -65,18 +65,29 @@ export function PositioningMap({ positioningData }: PositioningMapProps) {
 
   // Split data by type
   const userAppData = positioningData.filter((d) => d.entityType === 'user_app');
+  
+  // Separate competitors by type, defaulting to 'direct' if type is missing
   const directCompetitorData = positioningData.filter(
-    (d) => d.entityType === 'competitor' && d.competitorType === 'direct'
+    (d) => d.entityType === 'competitor' && (d.competitorType === 'direct' || !d.competitorType)
   );
   const indirectCompetitorData = positioningData.filter(
     (d) => d.entityType === 'competitor' && d.competitorType === 'indirect'
   );
+  
+  // All competitor data (for fallback display)
+  const allCompetitorData = positioningData.filter((d) => d.entityType === 'competitor');
 
-  // If no data points, show message
+  // If no data points, show message with debug info
   if (userAppData.length === 0 && directCompetitorData.length === 0 && indirectCompetitorData.length === 0) {
     return (
       <div className="text-center py-8 text-gray-500">
         <p>No positioning data available yet.</p>
+        <p className="text-xs mt-2 text-gray-400">
+          Total data points: {positioningData.length} | 
+          User app: {userAppData.length} | 
+          Direct: {directCompetitorData.length} | 
+          Indirect: {indirectCompetitorData.length}
+        </p>
       </div>
     );
   }
@@ -120,21 +131,33 @@ export function PositioningMap({ positioningData }: PositioningMapProps) {
           <ReferenceLine y={5} stroke="#9ca3af" strokeWidth={2} />
 
           {/* Scatter plots */}
-          <Scatter name="Your App" data={userAppData} fill="#3b82f6">
+          <Scatter name={userAppName || "Your App"} data={userAppData} fill="#3b82f6">
             {userAppData.map((entry) => (
               <Cell key={entry.id} r={12} />
             ))}
           </Scatter>
-          <Scatter name="Direct Competitors" data={directCompetitorData} fill="#f97316">
-            {directCompetitorData.map((entry) => (
-              <Cell key={entry.id} fill="#f97316" r={8} />
-            ))}
-          </Scatter>
-          <Scatter name="Indirect Competitors" data={indirectCompetitorData} fill="#a855f7">
-            {indirectCompetitorData.map((entry) => (
-              <Cell key={entry.id} r={8} />
-            ))}
-          </Scatter>
+          {directCompetitorData.length > 0 && (
+            <Scatter name="Direct Competitors" data={directCompetitorData} fill="#f97316">
+              {directCompetitorData.map((entry) => (
+                <Cell key={entry.id} fill="#f97316" r={8} />
+              ))}
+            </Scatter>
+          )}
+          {indirectCompetitorData.length > 0 && (
+            <Scatter name="Indirect Competitors" data={indirectCompetitorData} fill="#a855f7">
+              {indirectCompetitorData.map((entry) => (
+                <Cell key={entry.id} fill="#a855f7" r={8} />
+              ))}
+            </Scatter>
+          )}
+          {/* Fallback: show all competitors if type filtering resulted in empty arrays */}
+          {directCompetitorData.length === 0 && indirectCompetitorData.length === 0 && allCompetitorData.length > 0 && (
+            <Scatter name="Competitors" data={allCompetitorData} fill="#f97316">
+              {allCompetitorData.map((entry) => (
+                <Cell key={entry.id} fill="#f97316" r={8} />
+              ))}
+            </Scatter>
+          )}
         </ScatterChart>
       </ResponsiveContainer>
 

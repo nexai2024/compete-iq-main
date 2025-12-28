@@ -83,6 +83,19 @@ export const AnalysisForm: React.FC = () => {
     return true;
   };
 
+  // Load user's projects
+  const fetchProjects = useCallback(async () => {
+    // Fetch projects
+    try {
+      const res = await fetch('/api/projects');
+      const json = await res.json();
+      if (!res.ok) return;
+      setProjects(json.projects || []);
+    } catch {
+      console.error('Error fetching projects');
+    }
+  }, []);
+
   // Save current form state to a Project (auto-save)
   const saveProject = useCallback(async () => {
     setSaveStatus('saving');
@@ -120,7 +133,7 @@ export const AnalysisForm: React.FC = () => {
       console.error('Error saving project');
       setSaveStatus('error');
     }
-  }, [projectId, appName, targetAudience, description, features]);
+  }, [projectId, appName, targetAudience, description, features, fetchProjects]);
 
   const scheduleAutoSave = useCallback(() => {
     if (saveTimer.current) window.clearTimeout(saveTimer.current);
@@ -137,19 +150,6 @@ export const AnalysisForm: React.FC = () => {
     scheduleAutoSave();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [appName, targetAudience, description, features]);
-
-  // Load user's projects
-  const fetchProjects = useCallback(async () => {
-    // Fetch projects
-    try {
-      const res = await fetch('/api/projects');
-      const json = await res.json();
-      if (!res.ok) return;
-      setProjects(json.projects || []);
-    } catch {
-      console.error('Error fetching projects');
-    }
-  }, []);
 
   useEffect(() => {
     fetchProjects();

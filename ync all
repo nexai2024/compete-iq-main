@@ -1,0 +1,99 @@
+[33mcommit 65d40e0e13694671b3ca124fde5c336cca24c56d[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m
+Author: David Parker <nexai.coach@gmail.com>
+Date:   Sat Dec 27 04:12:55 2025 -0500
+
+    chore: update dependencies and enhance documentation
+    
+    - Updated Next.js, React, and React DOM to version 16.1.1 and 19.2.3 respectively.
+    - Upgraded @types/node to version 25 and eslint-config-next to version 16.1.1.
+    - Added a new section in the enhancement plan for future phases.
+    - Minor adjustments to various components for improved structure and clarity.
+
+[33mcommit 3db3238805b7e56fe308fdb3fe68a9fd0462cda3[m
+Author: David Parker <nexai.coach@gmail.com>
+Date:   Sat Dec 27 01:47:55 2025 -0500
+
+    feat: implement market intelligence feature and enhance analysis management
+    
+    - Added Market Intelligence model to the Prisma schema, capturing industry insights and competitive analysis.
+    - Updated API routes to include market intelligence data in analysis responses.
+    - Enhanced analysis deletion functionality with confirmation dialogs in the UI.
+    - Improved error handling and loading states across various components.
+    - Refactored components to support new market intelligence data, including updates to the FeatureMatrix and PositioningMap components.
+    - Integrated GitHub import functionality in the AnalysisForm for streamlined project setup.
+
+[33mcommit 72e95ec8c47cde673bf0b1259a2960fea75f6bce[m
+Merge: ccda955 1eac6a1
+Author: David Parker <nexai.coach@gmail.com>
+Date:   Fri Dec 26 10:02:42 2025 -0500
+
+    Merge pull request #4 from nexai2024/compyle/finish-remaining-features
+    
+    [Compyle] Task cmjmype1x011miroje73k4b5i updates for compete-iq-main
+
+[33mcommit 1eac6a1900b662a10d1337b5776380dcd635d414[m[33m ([m[1;31morigin/compyle/finish-remaining-features[m[33m)[m
+Author: Compyle Bot <bot@compyle.dev>
+Date:   Fri Dec 26 14:59:16 2025 +0000
+
+    Compyle sync all
+
+[33mcommit ccda9552738e94c5d1c11dcd5ebdc7e698bc4504[m
+Merge: fdad912 abd6247
+Author: David Parker <nexai.coach@gmail.com>
+Date:   Fri Dec 26 09:19:14 2025 -0500
+
+    Merge pull request #3 from nexai2024/compyle/competiq-init
+    
+    Merge pull request #2 from nexai2024/main
+
+[33mcommit abd6247e2d11681b7d2270ca31d4c9370a178110[m[33m ([m[1;31morigin/compyle/competiq-init[m[33m)[m
+Merge: 966de97 fdad912
+Author: David Parker <nexai.coach@gmail.com>
+Date:   Fri Dec 26 09:17:34 2025 -0500
+
+    Merge pull request #2 from nexai2024/main
+    
+    Sync Compyle
+
+[33mcommit fdad9127fbf76c49a756a8261367efacd36b9f84[m
+Author: David Parker <nexai.coach@gmail.com>
+Date:   Fri Dec 26 09:12:44 2025 -0500
+
+    feat: normalize system_prompt handling in persona generator
+    
+    - Added logic to ensure system_prompt is always a string, accommodating various formats returned by the AI.
+    - Updated the persona generation process to use the normalized system_prompt, improving consistency and reliability.
+
+[33mcommit 2508aa001524ec7fa0d6eccad8678fd9de3168ec[m
+Author: Khalil Malik <nexai.coach@gmail.com>
+Date:   Fri Dec 26 07:05:38 2025 +0000
+
+    feat: add project model and API for saving user projects
+    
+    - Added a new Project model to the Prisma schema for saving user drafts and templates.
+    - Implemented API routes for creating, fetching, and deleting projects.
+    - Integrated project management into the AnalysisForm component with auto-save functionality.
+    - Created a ProjectList component to display saved projects on the dashboard.
+    - Updated the database connection to use the PostgreSQL adapter.
+    - Enhanced error handling and user authentication checks in the API routes.
+
+[33mcommit 82adfeab362b7ce52d20972f28dc0c2fce3c7cae[m
+Merge: c0677d1 966de97
+Author: Khalil Malik <nexai.coach@gmail.com>
+Date:   Thu Dec 25 17:29:14 2025 -0500
+
+    Merge pull request #1 from nexai2024/compyle/competiq-init
+    
+    [Compyle] Task cmjldevci00e0imr3owodk259 updates for compete-iq-main
+
+[33mcommit 966de97ed6a3119830b3bc33c5ab054fecfbbd23[m
+Author: Compyle Bot <bot@compyle.dev>
+Date:   Thu Dec 25 22:27:44 2025 +0000
+
+    Compyle sync all
+
+[33mcommit c0677d1b8efcddef84589af6cbf4059af2680140[m
+Author: Khalil Malik <nexai.coach@gmail.com>
+Date:   Thu Dec 25 06:35:55 2025 -0500
+
+    Initial commit

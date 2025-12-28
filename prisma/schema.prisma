@@ -100,6 +100,7 @@ model Analysis {
   positioningData     PositioningData[]
   simulatedReviews    SimulatedReview[]
   marketIntelligence  MarketIntelligence?
+  normalizedFeatureGroups NormalizedFeatureGroup[]
 
   @@index([userId])
   @@index([status])
@@ -115,12 +116,15 @@ model UserFeature {
   mvpPriority         MVPPriority? @map("mvp_priority")
   priorityReasoning   String?      @map("priority_reasoning")
   orderIndex          Int          @map("order_index")
+  normalizedGroupId   String?      @map("normalized_group_id")
   createdAt           DateTime     @default(now()) @map("created_at")
 
   analysis            Analysis     @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+  normalizedGroup     NormalizedFeatureGroup? @relation(fields: [normalizedGroupId], references: [id], onDelete: SetNull)
 
   @@index([analysisId])
   @@index([mvpPriority])
+  @@index([normalizedGroupId])
   @@map("user_features")
 }
 
@@ -155,11 +159,14 @@ model CompetitorFeature {
   featureDescription  String?   @map("feature_description")
   featureCategory     String?   @map("feature_category")
   isPaid              Boolean?  @map("is_paid")
+  normalizedGroupId   String?   @map("normalized_group_id")
   createdAt           DateTime  @default(now()) @map("created_at")
 
   competitor          Competitor @relation(fields: [competitorId], references: [id], onDelete: Cascade)
+  normalizedGroup     NormalizedFeatureGroup? @relation(fields: [normalizedGroupId], references: [id], onDelete: SetNull)
 
   @@index([competitorId])
+  @@index([normalizedGroupId])
   @@map("competitor_features")
 }
 
@@ -339,6 +346,23 @@ model MarketIntelligence {
 
   @@index([analysisId])
   @@map("market_intelligence")
+}
+
+// Normalized Feature Groups - Groups semantically similar features together
+model NormalizedFeatureGroup {
+  id                  String    @id @default(uuid())
+  analysisId          String    @map("analysis_id")
+  canonicalName       String    @map("canonical_name")
+  description         String?   @map("description")
+  createdAt           DateTime  @default(now()) @map("created_at")
+
+  analysis            Analysis  @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+  userFeatures        UserFeature[]
+  competitorFeatures  CompetitorFeature[]
+
+  @@unique([analysisId, canonicalName])
+  @@index([analysisId])
+  @@map("normalized_feature_groups")
 }
 
 // Projects saved by users as drafts or reusable templates for analyses

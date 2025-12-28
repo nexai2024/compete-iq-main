@@ -58,16 +58,20 @@ For EACH app (user + ${competitors.length} competitors), score:
    - Setup and maintenance effort
    - Feature bloat vs simplicity
 
-Return JSON array:
-[
-  {
-    "entity_name": "app name",
-    "is_user_app": true/false,
-    "value_score": X.X,
-    "complexity_score": X.X,
-    "reasoning": "brief explanation"
-  }
-]`,
+Return JSON object with "positions" array:
+{
+  "positions": [
+    {
+      "entity_name": "app name",
+      "is_user_app": true,
+      "value_score": 7.5,
+      "complexity_score": 6.0,
+      "reasoning": "brief explanation"
+    }
+  ]
+}
+
+Include ALL apps: the user's app (is_user_app: true) and all ${competitors.length} competitors (is_user_app: false).`,
         },
       ],
       temperature: 0.3,
