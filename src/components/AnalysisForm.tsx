@@ -414,15 +414,16 @@ export const AnalysisForm: React.FC = () => {
       {/* Projects picker + save status */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-2">
-          <label className="text-sm text-gray-600">Saved Projects</label>
+          <label htmlFor="project-select" className="text-sm text-gray-600">Saved Projects</label>
           <select
+            id="project-select"
             value={projectId || ''}
             onChange={(e) => {
               const id = e.target.value;
               const selected = projects.find((p) => p.id === id);
               if (selected) loadProject(selected);
             }}
-            className="border rounded p-2"
+            className="block w-full max-w-xs px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-0 focus:border-blue-500 focus:ring-blue-500 transition-colors"
           >
             <option value="">-- Select project --</option>
             {projects.map((p) => (
