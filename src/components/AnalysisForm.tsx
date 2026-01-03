@@ -422,7 +422,7 @@ export const AnalysisForm: React.FC = () => {
               const selected = projects.find((p) => p.id === id);
               if (selected) loadProject(selected);
             }}
-            className="border rounded p-2"
+            className="block px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-0 focus:border-blue-500 focus:ring-blue-500 transition-colors"
           >
             <option value="">-- Select project --</option>
             {projects.map((p) => (
