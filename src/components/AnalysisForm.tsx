@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { Github, Loader2 } from 'lucide-react';
+import { Github, Loader2, X } from 'lucide-react';
 import { Input } from './ui/Input';
 import { Textarea } from './ui/Textarea';
 import { Button } from './ui/Button';
@@ -347,15 +347,16 @@ export const AnalysisForm: React.FC = () => {
               <Button
                 type="button"
                 variant="ghost"
-                size="sm"
+                size="icon"
                 onClick={() => {
                   setShowGitHubImport(false);
                   setGithubUrl('');
                   setGithubToken('');
                   setImportError('');
                 }}
+                aria-label="Close GitHub import"
               >
-                Cancel
+                <X className="w-5 h-5" />
               </Button>
             </div>
 
