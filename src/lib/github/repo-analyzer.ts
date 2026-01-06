@@ -75,7 +75,7 @@ export async function fetchGitHubRepo(
         }
       }
   } catch (error) {
-    console.warn('Could not fetch README:', error);
+    console.warn('Could not fetch README:', error instanceof Error ? error.message : 'Unknown error');
   }
 
   // Fetch package.json or similar config files
@@ -267,7 +267,7 @@ ${context}`,
             ],
     };
   } catch (error) {
-    console.error('Error extracting app info:', error);
+    console.error('Error extracting app info:', error instanceof Error ? error.message : 'Unknown AI error');
     // Return defaults based on repo info
     return {
       appName: repoInfo.name,
