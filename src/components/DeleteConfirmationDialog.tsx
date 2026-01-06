@@ -55,8 +55,11 @@ export const DeleteConfirmationDialog: React.FC<DeleteConfirmationDialogProps> =
         </div>
 
         <div>
+          <label htmlFor="confirm-delete-input" className="block text-sm font-medium text-gray-700 mb-1">
+            Type <strong className="font-semibold">{itemName}</strong> to confirm deletion
+          </label>
           <Input
-            label={`Type "${itemName}" to confirm deletion`}
+            id="confirm-delete-input"
             value={confirmName}
             onChange={(e) => setConfirmName(e.target.value)}
             placeholder={itemName}
