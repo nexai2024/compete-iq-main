@@ -37,9 +37,14 @@ export async function POST(request: NextRequest) {
     try {
       repoInfo = await fetchGitHubRepo(parsed.owner, parsed.repo, githubToken);
     } catch (error) {
+      // Log the internal error for debugging.
+      // Note: We avoid logging the raw 'error' object which might contain sensitive details.
       const errorMessage = error instanceof Error ? error.message : 'Failed to fetch repository';
+      console.error(`[GitHub Import] Fetch failed for ${parsed.owner}/${parsed.repo}: ${errorMessage}`);
+
+      // Return a generic error message to the client to avoid leaking implementation details.
       return NextResponse.json(
-        { error: errorMessage },
+        { error: 'Failed to fetch repository data. It may be private, non-existent, or you may have hit a rate limit.' },
         { status: 400 }
       );
     }
