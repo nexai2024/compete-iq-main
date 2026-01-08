@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { memo } from 'react';
 import { Loader2 } from 'lucide-react';
 
 interface AnalysisLoadingStateProps {
@@ -24,7 +24,12 @@ const stageLabels: Record<string, string> = {
   complete: 'Analysis complete!',
 };
 
-export const AnalysisLoadingState: React.FC<AnalysisLoadingStateProps> = ({ stage }) => {
+// Performance Optimization:
+// Wrapped in React.memo to prevent unnecessary re-renders. This component's parent
+// polls for status updates every 2 seconds. Memoization ensures this component
+// only re-renders when the `stage` prop actually changes, reducing CPU load
+// during the loading phase.
+export const AnalysisLoadingState: React.FC<AnalysisLoadingStateProps> = memo(({ stage }) => {
   const getStageLabel = (stage: string | null | undefined): string => {
     if (!stage) return 'Starting analysis...';
 
@@ -120,4 +125,6 @@ export const AnalysisLoadingState: React.FC<AnalysisLoadingStateProps> = ({ stag
       </div>
     </div>
   );
-};
+});
+
+AnalysisLoadingState.displayName = 'AnalysisLoadingState';
