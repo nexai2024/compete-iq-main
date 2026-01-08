@@ -20,80 +20,80 @@ export async function GET(
 
     const { analysisId } = await params;
 
-    // 2. Fetch complete analysis with all relations
-    const analysis = await prisma.analysis.findUnique({
+    // 2. Fetch complete analysis with an optimized query
+    const analysisWithRelations = await prisma.analysis.findUnique({
       where: { id: analysisId },
-      include: {
-        userFeatures: {
-          orderBy: { orderIndex: 'asc' },
-        },
+      // ⚡ Bolt: Optimized query to reduce over-fetching.
+      // Replaced a broad `include` with a precise `select`, removing unnecessary nested
+      // data from `featureMatrixScores` and `positioningData`. The subsequent data
+      // processing logic already handles this transformation, so fetching the nested
+      // data was redundant and slowed down the query.
+      // Impact: Reduces payload size and database load significantly.
+      select: {
+        id: true,
+        userId: true,
+        appName: true,
+        targetAudience: true,
+        description: true,
+        status: true,
+        aiProcessingStage: true,
+        errorMessage: true,
+        createdAt: true,
+        updatedAt: true,
+        userFeatures: { orderBy: { orderIndex: 'asc' } },
         competitors: {
           orderBy: { orderIndex: 'asc' },
-          include: {
-            features: true,
-          },
+          include: { features: true },
         },
-        comparisonParameters: {
-          orderBy: { orderIndex: 'asc' },
-        },
-        featureMatrixScores: {
-          include: {
-            parameter: true,
-            competitor: true,
-          },
-        },
-        gapAnalysisItems: {
-          orderBy: { orderIndex: 'asc' },
-        },
+        comparisonParameters: { orderBy: { orderIndex: 'asc' } },
+        featureMatrixScores: true,
+        gapAnalysisItems: { orderBy: { orderIndex: 'asc' } },
         blueOceanInsight: true,
-        personas: {
-          orderBy: { orderIndex: 'asc' },
-        },
-        positioningData: {
-          include: {
-            competitor: {
-              select: {
-                type: true,
-              },
-            },
-          },
-        },
-        simulatedReviews: {
-          orderBy: { rating: 'desc' },
-        },
+        personas: { orderBy: { orderIndex: 'asc' } },
+        positioningData: true,
+        simulatedReviews: { orderBy: { rating: 'desc' } },
         marketIntelligence: true,
       },
     });
 
-    if (!analysis) {
+    if (!analysisWithRelations) {
       throw new NotFoundError('Analysis not found');
     }
 
     // 3. Verify ownership
-    if (analysis.userId !== userId) {
+    if (analysisWithRelations.userId !== userId) {
       throw new AuthorizationError('You do not have access to this analysis');
     }
 
+    // ⚡ Bolt: Destructure to separate core analysis from relations.
+    // This prevents duplicating the relational data in the final JSON response,
+    // shrinking the payload and making the client-side handling cleaner.
+    const {
+      userFeatures,
+      competitors,
+      comparisonParameters,
+      featureMatrixScores,
+      gapAnalysisItems,
+      blueOceanInsight,
+      personas,
+      positioningData,
+      simulatedReviews,
+      marketIntelligence,
+      ...coreAnalysis
+    } = analysisWithRelations;
+
     // 4. Enrich positioning data with competitor type
-    type PositioningDataWithCompetitor = typeof analysis.positioningData[0];
-    type CompetitorWithFeatures = typeof analysis.competitors[0];
-    const enrichedPositioningData = analysis.positioningData.map((position: PositioningDataWithCompetitor) => {
-      // Get competitor type if this is a competitor entity
+    const enrichedPositioningData = positioningData.map((position) => {
       let competitorType: 'direct' | 'indirect' | undefined = undefined;
       if (position.entityType === 'competitor' && position.entityId) {
-        const competitor = analysis.competitors.find((c: CompetitorWithFeatures) => c.id === position.entityId);
+        const competitor = competitors.find((c) => c.id === position.entityId);
         competitorType = competitor?.type || undefined;
       }
-      
-      return {
-        ...position,
-        competitorType,
-      };
+      return { ...position, competitorType };
     });
 
-    // 5. Flatten feature matrix scores (remove nested relations for client)
-    type FeatureMatrixScoreWithRelations = typeof analysis.featureMatrixScores[0];
-    const flattenedScores = analysis.featureMatrixScores.map((score: FeatureMatrixScoreWithRelations) => ({
+    // 5. Flatten feature matrix scores (the nested relations are no longer fetched)
+    const flattenedScores = featureMatrixScores.map((score) => ({
       id: score.id,
       analysisId: score.analysisId,
       parameterId: score.parameterId,
@@ -104,19 +104,19 @@ export async function GET(
       createdAt: score.createdAt,
     }));
 
-    // 6. Return full analysis data
+    // 6. Return full analysis data with a clean, non-redundant structure
     const response: FullAnalysisResponse = {
-      analysis,
-      userFeatures: analysis.userFeatures,
-      competitors: analysis.competitors,
-      comparisonParameters: analysis.comparisonParameters,
+      analysis: coreAnalysis,
+      userFeatures,
+      competitors,
+      comparisonParameters,
       featureMatrixScores: flattenedScores,
-      gapAnalysisItems: analysis.gapAnalysisItems,
-      blueOceanInsight: analysis.blueOceanInsight,
-      personas: analysis.personas,
-      positioningData: enrichedPositioningData as typeof analysis.positioningData,
-      simulatedReviews: analysis.simulatedReviews,
-      marketIntelligence: analysis.marketIntelligence,
+      gapAnalysisItems,
+      blueOceanInsight,
+      personas,
+      positioningData: enrichedPositioningData,
+      simulatedReviews,
+      marketIntelligence,
     };
 
     return NextResponse.json(response);
