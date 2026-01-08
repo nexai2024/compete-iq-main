@@ -58,12 +58,12 @@ export async function POST(request: NextRequest) {
     // Run in background - don't await
     processAnalysis(analysis.id).catch((error) => {
       console.error(`Error processing analysis ${analysis.id}:`, error);
-      // Update analysis status to failed
+      // Update analysis status to failed with a generic error message
       prisma.analysis.update({
         where: { id: analysis.id },
         data: {
           status: 'failed',
-          errorMessage: error.message || 'Processing failed',
+          errorMessage: 'Processing failed unexpectedly. Please try again.',
         },
       }).catch(console.error);
     });
@@ -77,10 +77,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(response, { status: 201 });
   } catch (error) {
     console.error('Error creating analysis:', error);
-    const errorResponse = formatErrorResponse(error);
+    const { error: errorMessage, statusCode } = formatErrorResponse(error);
     return NextResponse.json(
-      { error: errorResponse.error },
-      { status: errorResponse.statusCode }
+      { error: errorMessage },
+      { status: statusCode }
     );
   }
 }
@@ -143,10 +143,10 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(response, { status: 200 });
   } catch (error) {
     console.error('Error fetching analyses:', error);
-    const errorResponse = formatErrorResponse(error);
+    const { error: errorMessage, statusCode } = formatErrorResponse(error);
     return NextResponse.json(
-      { error: errorResponse.error },
-      { status: errorResponse.statusCode }
+      { error: errorMessage },
+      { status: statusCode }
     );
   }
 }
