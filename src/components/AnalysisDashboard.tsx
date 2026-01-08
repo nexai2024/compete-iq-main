@@ -59,6 +59,29 @@ export const AnalysisDashboard: React.FC<AnalysisDashboardProps> = ({ analysisId
     fetchAnalysis();
   }, [analysisId]);
 
+  // ⚡ Bolt: Memoize derived data to prevent expensive filtering/sorting on every render.
+  // Moved hooks to the top level to fix linting error (hooks cannot be called conditionally).
+  // The hooks now safely handle the case where `data` is not yet available.
+  const deficits = React.useMemo(() => {
+    if (!data?.gapAnalysisItems) return [];
+    const severityOrder: Record<string, number> = {
+      critical: 0,
+      high: 1,
+      medium: 2,
+      low: 3,
+    };
+    return data.gapAnalysisItems
+      .filter((item) => item.type === 'deficit')
+      .sort((a, b) => (severityOrder[a.severity || 'low'] || 3) - (severityOrder[b.severity || 'low'] || 3));
+  }, [data?.gapAnalysisItems]);
+
+  const standouts = React.useMemo(() => {
+    if (!data?.gapAnalysisItems) return [];
+    return data.gapAnalysisItems
+      .filter((item) => item.type === 'standout')
+      .sort((a, b) => (b.opportunityScore || 0) - (a.opportunityScore || 0));
+  }, [data?.gapAnalysisItems]);
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -80,10 +103,10 @@ export const AnalysisDashboard: React.FC<AnalysisDashboardProps> = ({ analysisId
     );
   }
 
-  const { analysis, competitors, gapAnalysisItems, personas } = data;
+  const { analysis, competitors, personas } = data;
 
-  const deficitsCount = gapAnalysisItems.filter((g) => g.type === 'deficit').length;
-  const standoutsCount = gapAnalysisItems.filter((g) => g.type === 'standout').length;
+  const deficitsCount = deficits.length;
+  const standoutsCount = standouts.length;
 
   const handleDelete = async () => {
     setIsDeleting(true);
@@ -394,38 +417,27 @@ export const AnalysisDashboard: React.FC<AnalysisDashboardProps> = ({ analysisId
               {/* Section 3: Competitive Deficits */}
               <div className="bg-white rounded-lg shadow-md p-6">
                 <h2 className="text-xl font-bold mb-2">
-                  🔴 Competitive Deficits (
-                  {gapAnalysisItems.filter((g) => g.type === 'deficit').length})
+                  🔴 Competitive Deficits ({deficits.length})
                 </h2>
                 <p className="text-sm text-gray-600 mb-4">
                   Areas where competitors have advantages you should address
                 </p>
-                {gapAnalysisItems.filter((g) => g.type === 'deficit').length > 0 ? (
+                {deficits.length > 0 ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {gapAnalysisItems
-                      .filter((item) => item.type === 'deficit')
-                      .sort((a, b) => {
-                        const severityOrder: Record<string, number> = {
-                          critical: 0,
-                          high: 1,
-                          medium: 2,
-                          low: 3,
-                        };
-                        return (
-                          (severityOrder[a.severity || 'low'] || 3) -
-                          (severityOrder[b.severity || 'low'] || 3)
-                        );
-                      })
-                      .map((deficit) => (
-                        <DeficitCard
-                          key={deficit.id}
-                          title={deficit.title}
-                          description={deficit.description}
-                          severity={deficit.severity ?? "low"}
-                          affectedCompetitors={Array.isArray(deficit.affectedCompetitors) ? deficit.affectedCompetitors as string[] : []}
-                          recommendation={deficit.recommendation ?? ""}
-                        />
-                      ))}
+                    {deficits.map((deficit) => (
+                      <DeficitCard
+                        key={deficit.id}
+                        title={deficit.title}
+                        description={deficit.description}
+                        severity={deficit.severity ?? 'low'}
+                        affectedCompetitors={
+                          Array.isArray(deficit.affectedCompetitors)
+                            ? (deficit.affectedCompetitors as string[])
+                            : []
+                        }
+                        recommendation={deficit.recommendation ?? ''}
+                      />
+                    ))}
                   </div>
                 ) : (
                   <p className="text-gray-500">
@@ -437,26 +449,22 @@ export const AnalysisDashboard: React.FC<AnalysisDashboardProps> = ({ analysisId
               {/* Section 4: Unique Standouts */}
               <div className="bg-white rounded-lg shadow-md p-6">
                 <h2 className="text-xl font-bold mb-2">
-                  🟢 Unique Standouts (
-                  {gapAnalysisItems.filter((g) => g.type === 'standout').length})
+                  🟢 Unique Standouts ({standouts.length})
                 </h2>
                 <p className="text-sm text-gray-600 mb-4">
                   Your competitive advantages and differentiation opportunities
                 </p>
-                {gapAnalysisItems.filter((g) => g.type === 'standout').length > 0 ? (
+                {standouts.length > 0 ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {gapAnalysisItems
-                      .filter((item) => item.type === 'standout')
-                      .sort((a, b) => (b.opportunityScore || 0) - (a.opportunityScore || 0))
-                      .map( (standout) => (
-                        <StandoutCard
-                          key={standout.id}
-                          title={standout.title}
-                          description={standout.description}
-                          opportunityScore={standout.opportunityScore || 0}
-                          recommendation={standout.recommendation || ""}
-                        />
-                      ))}
+                    {standouts.map((standout) => (
+                      <StandoutCard
+                        key={standout.id}
+                        title={standout.title}
+                        description={standout.description}
+                        opportunityScore={standout.opportunityScore || 0}
+                        recommendation={standout.recommendation || ''}
+                      />
+                    ))}
                   </div>
                 ) : (
                   <p className="text-gray-500">No unique standouts identified</p>
