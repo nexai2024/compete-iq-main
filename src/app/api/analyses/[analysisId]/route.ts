@@ -37,9 +37,15 @@ export async function GET(
           orderBy: { orderIndex: 'asc' },
         },
         featureMatrixScores: {
-          include: {
-            parameter: true,
-            competitor: true,
+          select: {
+            id: true,
+            analysisId: true,
+            parameterId: true,
+            entityType: true,
+            entityId: true,
+            score: true,
+            reasoning: true,
+            createdAt: true,
           },
         },
         gapAnalysisItems: {
@@ -91,26 +97,13 @@ export async function GET(
       };
     });
 
-    // 5. Flatten feature matrix scores (remove nested relations for client)
-    type FeatureMatrixScoreWithRelations = typeof analysis.featureMatrixScores[0];
-    const flattenedScores = analysis.featureMatrixScores.map((score: FeatureMatrixScoreWithRelations) => ({
-      id: score.id,
-      analysisId: score.analysisId,
-      parameterId: score.parameterId,
-      entityType: score.entityType,
-      entityId: score.entityId,
-      score: score.score,
-      reasoning: score.reasoning,
-      createdAt: score.createdAt,
-    }));
-
-    // 6. Return full analysis data
+    // 5. Return full analysis data
     const response: FullAnalysisResponse = {
       analysis,
       userFeatures: analysis.userFeatures,
       competitors: analysis.competitors,
       comparisonParameters: analysis.comparisonParameters,
-      featureMatrixScores: flattenedScores,
+      featureMatrixScores: analysis.featureMatrixScores,
       gapAnalysisItems: analysis.gapAnalysisItems,
       blueOceanInsight: analysis.blueOceanInsight,
       personas: analysis.personas,
