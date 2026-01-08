@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { Github, Loader2 } from 'lucide-react';
+import { Github, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
 import { Input } from './ui/Input';
 import { Textarea } from './ui/Textarea';
 import { Button } from './ui/Button';
@@ -23,6 +23,7 @@ export const AnalysisForm: React.FC = () => {
   const [projects, setProjects] = useState<ProjectListItem[]>([]);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [lastSavedAt, setLastSavedAt] = useState<number | null>(null);
+  const [timeAgo, setTimeAgo] = useState('');
 
   // Form state
   const [appName, setAppName] = useState('');
@@ -146,10 +147,22 @@ export const AnalysisForm: React.FC = () => {
     // don't auto-save if everything is empty
     const hasAny = appName || targetAudience || description || features.some((f) => f.name.trim() !== '');
     if (!hasAny) return;
-    setSaveStatus('idle');
     scheduleAutoSave();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [appName, targetAudience, description, features]);
+
+  useEffect(() => {
+    if (saveStatus !== 'saved' || !lastSavedAt) return;
+
+    const update = () => {
+      const seconds = Math.round((Date.now() - lastSavedAt) / 1000);
+      setTimeAgo(`${seconds}s ago`);
+    };
+
+    update();
+    const interval = setInterval(update, 1000);
+    return () => clearInterval(interval);
+  }, [saveStatus, lastSavedAt]);
 
   useEffect(() => {
     fetchProjects();
@@ -433,12 +446,25 @@ export const AnalysisForm: React.FC = () => {
           </select>
         </div>
 
-        <div className="text-sm text-gray-500">
-          {saveStatus === 'saving' && <span>Saving…</span>}
-          {saveStatus === 'saved' && lastSavedAt && (
-            <span>Saved {Math.round((Date.now() - lastSavedAt) / 1000)}s ago</span>
+        <div className="text-sm text-gray-500 h-5 flex items-center">
+          {saveStatus === 'saving' && (
+            <span className="flex items-center gap-1.5">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Saving…
+            </span>
           )}
-          {saveStatus === 'error' && <span className="text-red-600">Error saving</span>}
+          {saveStatus === 'saved' && lastSavedAt && (
+            <span className="flex items-center gap-1.5 text-green-600">
+              <CheckCircle className="w-4 h-4" />
+              Saved {timeAgo}
+            </span>
+          )}
+          {saveStatus === 'error' && (
+            <span className="flex items-center gap-1.5 text-red-600">
+              <AlertCircle className="w-4 h-4" />
+              Error saving
+            </span>
+          )}
         </div>
       </div>
 
