@@ -76,7 +76,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(response, { status: 201 });
   } catch (error) {
-    console.error('Error creating analysis:', error);
+    console.error('Error creating analysis:', { message: (error as Error).message });
     const errorResponse = formatErrorResponse(error);
     return NextResponse.json(
       { error: errorResponse.error },
@@ -142,7 +142,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(response, { status: 200 });
   } catch (error) {
-    console.error('Error fetching analyses:', error);
+    console.error('Error fetching analyses:', { message: (error as Error).message });
     const errorResponse = formatErrorResponse(error);
     return NextResponse.json(
       { error: errorResponse.error },
