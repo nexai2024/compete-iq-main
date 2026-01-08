@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { formatErrorResponse } from '@/lib/utils/errors';
 import { fetchGitHubRepo, parseGitHubUrl, extractAppInfoFromRepo } from '@/lib/github/repo-analyzer';
+import { isValidGitHubUrl } from '@/lib/github/utils';
 import type { ExtractedAppInfo } from '@/lib/github/repo-analyzer';
 
 export async function POST(request: NextRequest) {
@@ -16,9 +17,9 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { githubUrl, githubToken } = body;
 
-    if (!githubUrl || typeof githubUrl !== 'string') {
+    if (!githubUrl || typeof githubUrl !== 'string' || !isValidGitHubUrl(githubUrl)) {
       return NextResponse.json(
-        { error: 'GitHub URL is required' },
+        { error: 'A valid GitHub URL is required' },
         { status: 400 }
       );
     }
