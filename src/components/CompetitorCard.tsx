@@ -1,5 +1,6 @@
 'use client';
 
+import { memo } from 'react';
 import { ExternalLink } from 'lucide-react';
 
 interface CompetitorCardProps {
@@ -26,7 +27,10 @@ const typeStyles = {
   },
 };
 
-export function CompetitorCard({
+// ⚡ Bolt: Memoized CompetitorCard to prevent unnecessary re-renders.
+// This is a presentational component, and its output is solely dependent on its props.
+// Memoizing it avoids re-renders when the parent component's state changes for reasons unrelated to this component's data.
+export const CompetitorCard = memo(function CompetitorCard({
   name,
   type,
   description,
@@ -95,4 +99,5 @@ export function CompetitorCard({
       )}
     </div>
   );
-}
+});
+CompetitorCard.displayName = 'CompetitorCard';
