@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { Trash2 } from 'lucide-react';
 import { formatDateTime } from '@/lib/utils/formatting';
+import { useToast } from '@/components/ui/Toast';
 import { DeleteConfirmationDialog } from './DeleteConfirmationDialog';
 
 interface AnalysisCardProps {
@@ -47,6 +48,7 @@ export function AnalysisCard({
 }: AnalysisCardProps) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const { addToast } = useToast();
   const statusStyle = statusStyles[status];
 
   const handleDelete = async () => {
@@ -64,10 +66,19 @@ export function AnalysisCard({
       if (onDelete) {
         onDelete();
       }
+      addToast({
+        type: 'success',
+        title: 'Analysis Deleted',
+        message: `${appName} has been successfully deleted.`,
+      });
       setShowDeleteDialog(false);
     } catch (error) {
       console.error('Error deleting analysis:', error);
-      alert('Failed to delete analysis. Please try again.');
+      addToast({
+        type: 'error',
+        title: 'Deletion Failed',
+        message: 'Failed to delete the analysis. Please try again.',
+      });
     } finally {
       setIsDeleting(false);
     }
