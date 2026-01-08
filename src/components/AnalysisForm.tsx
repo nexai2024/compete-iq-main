@@ -2,10 +2,11 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { Github, Loader2 } from 'lucide-react';
+import { Github } from 'lucide-react';
 import { Input } from './ui/Input';
 import { Textarea } from './ui/Textarea';
 import { Button } from './ui/Button';
+import { Dialog } from './ui/Dialog';
 import { FeatureList, Feature } from './FeatureList';
 import { createAnalysisSchema } from '@/lib/utils/validation';
 import type { CreateAnalysisRequest, ProjectData } from '@/types/api';
@@ -39,7 +40,7 @@ export const AnalysisForm: React.FC = () => {
   const [githubToken, setGithubToken] = useState('');
   const [isImporting, setIsImporting] = useState(false);
   const [importError, setImportError] = useState<string>('');
-  const [showGitHubImport, setShowGitHubImport] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
   // Debounce timer
   const saveTimer = useRef<number | null>(null);
@@ -188,6 +189,13 @@ export const AnalysisForm: React.FC = () => {
     }
   }, []);
 
+  const closeImportModal = () => {
+    setIsImportModalOpen(false);
+    setGithubUrl('');
+    setGithubToken('');
+    setImportError('');
+  };
+
   const handleGitHubImport = async () => {
     if (!githubUrl.trim()) {
       setImportError('Please enter a GitHub repository URL');
@@ -241,10 +249,8 @@ export const AnalysisForm: React.FC = () => {
           setFeatures(importedFeatures);
         }
 
-        // Clear GitHub inputs and hide section
-        setGithubUrl('');
-        setGithubToken('');
-        setShowGitHubImport(false);
+        // Close modal and clear inputs
+        closeImportModal();
       }
     } catch (error) {
       console.error('Error importing from GitHub:', error);
@@ -318,98 +324,82 @@ export const AnalysisForm: React.FC = () => {
 
       {/* GitHub Import Section */}
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-        {!showGitHubImport ? (
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-1 flex items-center gap-2">
-                <Github className="w-5 h-5" />
-                Import from GitHub
-              </h3>
-              <p className="text-sm text-gray-600">
-                Automatically extract app name, description, and features from your GitHub repository
-              </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-1 flex items-center gap-2">
+              <Github className="w-5 h-5" />
+              Import from GitHub
+            </h3>
+            <p className="text-sm text-gray-600">
+              Automatically extract app name, description, and features from your GitHub repository.
+            </p>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setIsImportModalOpen(true)}
+            aria-label="Import from GitHub Repository"
+          >
+            Import
+          </Button>
+        </div>
+      </div>
+
+      <Dialog
+        open={isImportModalOpen}
+        onClose={closeImportModal}
+        title="Import from GitHub"
+      >
+        <div className="space-y-4 pt-2">
+          <div>
+            <Input
+              label="GitHub Repository URL"
+              placeholder="https://github.com/owner/repo"
+              value={githubUrl}
+              onChange={(e) => setGithubUrl(e.target.value)}
+              helperText="Enter the full GitHub URL or owner/repo format."
+              disabled={isImporting}
+            />
+          </div>
+
+          <div>
+            <Input
+              label="GitHub Token (Optional)"
+              type="password"
+              placeholder="ghp_..."
+              value={githubToken}
+              onChange={(e) => setGithubToken(e.target.value)}
+              helperText="Required for private repositories. Create one at github.com/settings/tokens"
+              disabled={isImporting}
+            />
+          </div>
+
+          {importError && (
+            <div className="bg-red-50 border border-red-200 rounded-md p-3">
+              <p className="text-sm text-red-800">{importError}</p>
             </div>
+          )}
+
+          <div className="flex justify-end gap-2 pt-4">
             <Button
               type="button"
-              variant="outline"
-              onClick={() => setShowGitHubImport(true)}
+              variant="ghost"
+              onClick={closeImportModal}
+              disabled={isImporting}
             >
-              Import from GitHub
+              Cancel
             </Button>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                <Github className="w-5 h-5" />
-                Import from GitHub
-              </h3>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  setShowGitHubImport(false);
-                  setGithubUrl('');
-                  setGithubToken('');
-                  setImportError('');
-                }}
-              >
-                Cancel
-              </Button>
-            </div>
-
-            <div>
-              <Input
-                label="GitHub Repository URL"
-                placeholder="https://github.com/owner/repo or owner/repo"
-                value={githubUrl}
-                onChange={(e) => setGithubUrl(e.target.value)}
-                helperText="Enter the full GitHub URL or owner/repo format"
-                disabled={isImporting}
-              />
-            </div>
-
-            <div>
-              <Input
-                label="GitHub Token (Optional)"
-                type="password"
-                placeholder="ghp_xxxxxxxxxxxx"
-                value={githubToken}
-                onChange={(e) => setGithubToken(e.target.value)}
-                helperText="Required for private repositories. Create one at github.com/settings/tokens"
-                disabled={isImporting}
-              />
-            </div>
-
-            {importError && (
-              <div className="bg-red-50 border border-red-200 rounded-md p-3">
-                <p className="text-sm text-red-800">{importError}</p>
-              </div>
-            )}
-
             <Button
               type="button"
               onClick={handleGitHubImport}
               isLoading={isImporting}
               disabled={isImporting || !githubUrl.trim()}
-              className="w-full"
             >
-              {isImporting ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Analyzing Repository...
-                </>
-              ) : (
-                <>
-                  <Github className="w-4 h-4 mr-2" />
-                  Import Repository
-                </>
-              )}
+              {isImporting ? 'Analyzing...' : 'Import Repository'}
             </Button>
           </div>
-        )}
-      </div>
+        </div>
+      </Dialog>
 
       {/* Projects picker + save status */}
       <div className="flex items-center justify-between">
