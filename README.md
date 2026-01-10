@@ -333,6 +333,7 @@ Ensure PostgreSQL database is accessible and all environment variables are set.
 | `CLERK_SECRET_KEY` | Yes | Clerk secret key |
 | `OPENAI_API_KEY` | Yes | OpenAI API key for GPT-4 |
 | `PERPLEXITY_API_KEY` | Yes | Perplexity API key for search |
+| `GITHUB_TOKEN` | No | Optional GitHub token for a higher API rate limit and to access private repositories. |
 | `NEXT_PUBLIC_APP_URL` | Yes | Application URL (with protocol) |
 | `NODE_ENV` | No | Environment (development/production) |
 

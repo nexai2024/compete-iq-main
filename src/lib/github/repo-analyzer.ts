@@ -26,13 +26,13 @@ export interface ExtractedAppInfo {
  */
 export async function fetchGitHubRepo(
   owner: string,
-  repo: string,
-  githubToken?: string
+  repo: string
 ): Promise<GitHubRepoInfo> {
   const headers: HeadersInit = {
     Accept: 'application/vnd.github.v3+json',
   };
 
+  const githubToken = process.env.GITHUB_TOKEN;
   if (githubToken) {
     headers.Authorization = `token ${githubToken}`;
   }
