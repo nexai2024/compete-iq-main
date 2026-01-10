@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useId } from 'react';
 import { Dialog } from './ui/Dialog';
 import { Button } from './ui/Button';
 import { Input } from './ui/Input';
@@ -26,6 +26,9 @@ export const DeleteConfirmationDialog: React.FC<DeleteConfirmationDialogProps> =
   const isNameMatch = confirmName.trim() === itemName.trim();
   const canDelete = isNameMatch && !isLoading;
 
+  const confirmInputId = useId();
+  const descriptionId = useId();
+
   const handleConfirm = () => {
     if (canDelete) {
       onConfirm();
@@ -43,9 +46,11 @@ export const DeleteConfirmationDialog: React.FC<DeleteConfirmationDialogProps> =
       open={open}
       onClose={handleClose}
       title={`Delete ${itemType === 'project' ? 'Project' : 'Analysis'}`}
+      aria-labelledby="dialog-title"
+      aria-describedby={descriptionId}
     >
       <div className="space-y-4">
-        <div>
+        <div id={descriptionId}>
           <p className="text-gray-700 mb-2">
             Are you sure you want to delete <strong className="font-semibold">{itemName}</strong>?
           </p>
@@ -56,6 +61,7 @@ export const DeleteConfirmationDialog: React.FC<DeleteConfirmationDialogProps> =
 
         <div>
           <Input
+            id={confirmInputId}
             label={`Type "${itemName}" to confirm deletion`}
             value={confirmName}
             onChange={(e) => setConfirmName(e.target.value)}
@@ -79,6 +85,7 @@ export const DeleteConfirmationDialog: React.FC<DeleteConfirmationDialogProps> =
             onClick={handleConfirm}
             disabled={!canDelete}
             isLoading={isLoading}
+            aria-label={`Permanently delete ${itemName}`}
           >
             Delete Permanently
           </Button>
