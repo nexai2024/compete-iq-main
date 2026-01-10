@@ -10,6 +10,12 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
   ({ label, error, helperText, className = '', id, ...props }, ref) => {
     const generatedId = useId();
     const inputId = id || generatedId;
+    const errorId = `error-${inputId}`;
+    const helperTextId = `helper-${inputId}`;
+
+    const describedBy = [error ? errorId : null, helperText && !error ? helperTextId : null]
+      .filter(Boolean)
+      .join(' ');
 
     return (
       <div className="w-full">
@@ -22,6 +28,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
         <input
           ref={ref}
           id={inputId}
+          aria-describedby={describedBy || undefined}
           className={`block w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-0 transition-colors ${
             error
               ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
@@ -29,8 +36,16 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
           } ${className}`}
           {...props}
         />
-        {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
-        {helperText && !error && <p className="mt-1 text-sm text-gray-500">{helperText}</p>}
+        {error && (
+          <p id={errorId} className="mt-1 text-sm text-red-600">
+            {error}
+          </p>
+        )}
+        {helperText && !error && (
+          <p id={helperTextId} className="mt-1 text-sm text-gray-500">
+            {helperText}
+          </p>
+        )}
       </div>
     );
   }
