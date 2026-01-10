@@ -36,7 +36,6 @@ export const AnalysisForm: React.FC = () => {
 
   // GitHub import state
   const [githubUrl, setGithubUrl] = useState('');
-  const [githubToken, setGithubToken] = useState('');
   const [isImporting, setIsImporting] = useState(false);
   const [importError, setImportError] = useState<string>('');
   const [showGitHubImport, setShowGitHubImport] = useState(false);
@@ -205,7 +204,6 @@ export const AnalysisForm: React.FC = () => {
         },
         body: JSON.stringify({
           githubUrl: githubUrl.trim(),
-          githubToken: githubToken.trim() || undefined,
         }),
       });
 
@@ -243,7 +241,6 @@ export const AnalysisForm: React.FC = () => {
 
         // Clear GitHub inputs and hide section
         setGithubUrl('');
-        setGithubToken('');
         setShowGitHubImport(false);
       }
     } catch (error) {
@@ -351,7 +348,6 @@ export const AnalysisForm: React.FC = () => {
                 onClick={() => {
                   setShowGitHubImport(false);
                   setGithubUrl('');
-                  setGithubToken('');
                   setImportError('');
                 }}
               >
@@ -370,17 +366,6 @@ export const AnalysisForm: React.FC = () => {
               />
             </div>
 
-            <div>
-              <Input
-                label="GitHub Token (Optional)"
-                type="password"
-                placeholder="ghp_xxxxxxxxxxxx"
-                value={githubToken}
-                onChange={(e) => setGithubToken(e.target.value)}
-                helperText="Required for private repositories. Create one at github.com/settings/tokens"
-                disabled={isImporting}
-              />
-            </div>
 
             {importError && (
               <div className="bg-red-50 border border-red-200 rounded-md p-3">
