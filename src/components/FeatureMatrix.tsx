@@ -1,5 +1,6 @@
 'use client';
 
+import { useMemo } from 'react';
 import type { FeatureMatrixScore, ComparisonParameter } from '@/types/database';
 
 interface FeatureMatrixProps {
@@ -27,23 +28,31 @@ export function FeatureMatrix({
   parameters,
   scores,
 }: FeatureMatrixProps) {
-  // Find user app scores (entityType === 'user_app')
+  // ⚡ Bolt: Memoize score lookups for performance.
+  // By creating a lookup map, we change score lookups from O(n) to O(1),
+  // preventing a O(rows * cols * scores) complexity issue in the matrix.
+  const scoreMap = useMemo(() => {
+    const map = new Map<string, number>();
+    if (!scores) return map;
+    for (const score of scores) {
+      const key =
+        score.entityType === 'user_app'
+          ? `user_app::${score.parameterId}`
+          : `competitor::${score.entityId}::${score.parameterId}`;
+      map.set(key, score.score);
+    }
+    return map;
+  }, [scores]);
+
   const getUserScore = (parameterId: string): number | null => {
-    const score = scores.find(
-      (s) => s.parameterId === parameterId && s.entityType === 'user_app'
-    );
-    return score?.score ?? null;
+    return scoreMap.get(`user_app::${parameterId}`) ?? null;
   };
 
-  // Find competitor scores
-  const getCompetitorScore = (competitorId: string, parameterId: string): number | null => {
-    const score = scores.find(
-      (s) =>
-        s.parameterId === parameterId &&
-        s.entityType === 'competitor' &&
-        s.entityId === competitorId
-    );
-    return score?.score ?? null;
+  const getCompetitorScore = (
+    competitorId: string,
+    parameterId: string
+  ): number | null => {
+    return scoreMap.get(`competitor::${competitorId}::${parameterId}`) ?? null;
   };
 
   if (!parameters || parameters.length === 0) {
