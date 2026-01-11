@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
+import { auth, clerkClient } from '@clerk/nextjs/server';
 import { formatErrorResponse } from '@/lib/utils/errors';
 import { fetchGitHubRepo, parseGitHubUrl, extractAppInfoFromRepo } from '@/lib/github/repo-analyzer';
 import type { ExtractedAppInfo } from '@/lib/github/repo-analyzer';
@@ -12,9 +12,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
 
+    // 🛡️ SENTINEL: Securely fetch the user's OAuth token on the server.
+    const oauthTokens = await clerkClient.users.getUserOauthAccessToken(userId, 'github');
+    const githubToken = oauthTokens.find(token => token.provider === 'github')?.token;
+
+    if (!githubToken) {
+      return NextResponse.json({ error: 'GitHub token not found or expired.' }, { status: 403 });
+    }
+
     // 2. Parse request body
     const body = await request.json();
-    const { githubUrl, githubToken } = body;
+    const { githubUrl } = body;
 
     if (!githubUrl || typeof githubUrl !== 'string') {
       return NextResponse.json(
