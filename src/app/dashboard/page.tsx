@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { Plus, Loader2 } from 'lucide-react';
 import { ProjectList } from '@/components/ProjectList';
@@ -49,6 +49,12 @@ export default function DashboardPage() {
     setError(null);
     setIsLoading(true);
   };
+
+  // ⚡ Bolt: Memoize handler to prevent re-creating on every render.
+  // This is passed to the memoized AnalysisCard to prevent re-renders.
+  const handleDelete = useCallback((analysisId: string) => {
+    setAnalyses((prev) => prev.filter((a) => a.id !== analysisId));
+  }, []);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -168,10 +174,7 @@ export default function DashboardPage() {
                 <AnalysisCard
                   key={analysis.id}
                   {...analysis}
-                  onDelete={() => {
-                    // Remove from local state and refetch
-                    setAnalyses((prev) => prev.filter((a) => a.id !== analysis.id));
-                  }}
+                  onDelete={handleDelete}
                 />
               ))}
             </div>
