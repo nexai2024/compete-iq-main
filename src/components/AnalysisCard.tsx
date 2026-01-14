@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { memo, useState } from 'react';
 import Link from 'next/link';
 import { Trash2 } from 'lucide-react';
 import { formatDateTime } from '@/lib/utils/formatting';
@@ -14,7 +14,7 @@ interface AnalysisCardProps {
   createdAt: string;
   competitorCount: number;
   errorMessage?: string | null;
-  onDelete?: () => void;
+  onDelete?: (id: string) => void;
 }
 
 const statusStyles = {
@@ -35,7 +35,7 @@ const statusStyles = {
   },
 };
 
-export function AnalysisCard({
+const _AnalysisCard = ({
   id,
   appName,
   targetAudience,
@@ -44,7 +44,7 @@ export function AnalysisCard({
   competitorCount,
   errorMessage,
   onDelete,
-}: AnalysisCardProps) {
+}: AnalysisCardProps) => {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const statusStyle = statusStyles[status];
@@ -62,7 +62,7 @@ export function AnalysisCard({
 
       // Call the onDelete callback to update the parent component
       if (onDelete) {
-        onDelete();
+        onDelete(id);
       }
       setShowDeleteDialog(false);
     } catch (error) {
@@ -132,4 +132,9 @@ export function AnalysisCard({
       />
     </>
   );
-}
+};
+
+// This is a performance optimization to prevent re-rendering the card
+// when its props have not changed. The parent component tends to re-render
+// frequently when filters or sorting are changed.
+export const AnalysisCard = memo(_AnalysisCard);

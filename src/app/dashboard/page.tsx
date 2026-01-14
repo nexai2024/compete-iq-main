@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { Plus, Loader2 } from 'lucide-react';
 import { ProjectList } from '@/components/ProjectList';
@@ -49,6 +49,12 @@ export default function DashboardPage() {
     setError(null);
     setIsLoading(true);
   };
+
+  // Memoize the delete handler to prevent re-rendering all cards
+  // when one is deleted. This is a key performance optimization.
+  const handleDelete = useCallback((id: string) => {
+    setAnalyses((prev) => prev.filter((a) => a.id !== id));
+  }, []);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -168,10 +174,7 @@ export default function DashboardPage() {
                 <AnalysisCard
                   key={analysis.id}
                   {...analysis}
-                  onDelete={() => {
-                    // Remove from local state and refetch
-                    setAnalyses((prev) => prev.filter((a) => a.id !== analysis.id));
-                  }}
+                  onDelete={handleDelete}
                 />
               ))}
             </div>
