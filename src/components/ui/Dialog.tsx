@@ -5,9 +5,10 @@ export interface DialogProps {
   onClose: () => void;
   title: string;
   children: React.ReactNode;
+  descriptionId?: string;
 }
 
-export const Dialog: React.FC<DialogProps> = ({ open, onClose, title, children }) => {
+export const Dialog: React.FC<DialogProps> = ({ open, onClose, title, children, descriptionId }) => {
   useEffect(() => {
     if (!open) return;
 
@@ -44,6 +45,7 @@ export const Dialog: React.FC<DialogProps> = ({ open, onClose, title, children }
         role="dialog"
         aria-modal="true"
         aria-labelledby="dialog-title"
+        aria-describedby={descriptionId}
       >
         <div className="p-6">
           <h2 id="dialog-title" className="text-xl font-bold text-gray-900 mb-4">
