@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useId } from 'react';
 import { Dialog } from './ui/Dialog';
 import { Button } from './ui/Button';
 import { Input } from './ui/Input';
@@ -23,6 +23,7 @@ export const DeleteConfirmationDialog: React.FC<DeleteConfirmationDialogProps> =
   isLoading = false,
 }) => {
   const [confirmName, setConfirmName] = useState('');
+  const descriptionId = useId();
   const isNameMatch = confirmName.trim() === itemName.trim();
   const canDelete = isNameMatch && !isLoading;
 
@@ -43,9 +44,10 @@ export const DeleteConfirmationDialog: React.FC<DeleteConfirmationDialogProps> =
       open={open}
       onClose={handleClose}
       title={`Delete ${itemType === 'project' ? 'Project' : 'Analysis'}`}
+      descriptionId={descriptionId}
     >
       <div className="space-y-4">
-        <div>
+        <div id={descriptionId}>
           <p className="text-gray-700 mb-2">
             Are you sure you want to delete <strong className="font-semibold">{itemName}</strong>?
           </p>
