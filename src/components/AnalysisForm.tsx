@@ -331,7 +331,7 @@ export const AnalysisForm: React.FC = () => {
             </div>
             <Button
               type="button"
-              variant="outline"
+              variant="primary"
               onClick={() => setShowGitHubImport(true)}
             >
               Import from GitHub
