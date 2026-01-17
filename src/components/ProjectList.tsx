@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Trash2 } from 'lucide-react';
 import { DeleteConfirmationDialog } from './DeleteConfirmationDialog';
+import { ProjectListEmptyState } from './ProjectListEmptyState';
 
 type ProjectItem = { id: string; name?: string; updatedAt: string };
 
@@ -58,7 +59,9 @@ export const ProjectList: React.FC = () => {
     }
   };
 
-  if (!projects.length) return null;
+  if (!projects.length) {
+    return <ProjectListEmptyState />;
+  }
 
   return (
     <>
