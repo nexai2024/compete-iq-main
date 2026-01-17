@@ -1,0 +1,4 @@
+## 2024-07-19 - Server-Side Token Validation is Non-Negotiable
+**Vulnerability:** The `/api/github/import` endpoint accepted a GitHub OAuth token directly from the client-side request body.
+**Learning:** This vulnerability existed because the initial implementation trusted the client to handle and transmit a sensitive credential. Client-side tokens can be intercepted, logged, or leaked, creating a significant security risk. The correct pattern is to *never* trust the client with sensitive data. Authentication tokens must always be retrieved and managed on the server-side, leveraging the trusted session established by the authentication provider (in this case, Clerk).
+**Prevention:** For any operation requiring sensitive credentials like API keys or OAuth tokens, always retrieve them on the server using the authenticated user's session. Never pass them from the client. The server is the only secure source of truth for user identity and credentials.

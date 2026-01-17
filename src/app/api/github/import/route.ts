@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
+import { auth, clerkClient } from '@clerk/nextjs/server';
 import { formatErrorResponse } from '@/lib/utils/errors';
 import { fetchGitHubRepo, parseGitHubUrl, extractAppInfoFromRepo } from '@/lib/github/repo-analyzer';
 import type { ExtractedAppInfo } from '@/lib/github/repo-analyzer';
@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
 
     // 2. Parse request body
     const body = await request.json();
-    const { githubUrl, githubToken } = body;
+    const { githubUrl } = body;
 
     if (!githubUrl || typeof githubUrl !== 'string') {
       return NextResponse.json(
@@ -32,10 +32,38 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 4. Fetch repository data
+    // 4. Securely fetch GitHub token from Clerk
+    let accessToken: string | undefined;
+    try {
+      const client = await clerkClient();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const tokenResponse: any = await client.users.getUserOauthAccessToken(userId, 'oauth_github');
+      accessToken = tokenResponse[0]?.token;
+
+      if (!accessToken) {
+        // Fallback for users who signed up with GitHub but token is not available
+        const user = await client.users.getUser(userId);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const githubAccount: any = user.externalAccounts.find((acc: any) => acc.provider === 'oauth_github');
+        if (githubAccount && githubAccount.accessToken) {
+          accessToken = githubAccount.accessToken;
+        }
+      }
+    } catch (error) {
+      console.warn(`Could not retrieve OAuth token for user ${userId}:`, error);
+    }
+
+    if (!accessToken) {
+      return NextResponse.json(
+        { error: 'GitHub account not linked or token is missing. Please connect your GitHub account.' },
+        { status: 403 }
+      );
+    }
+
+    // 5. Fetch repository data
     let repoInfo;
     try {
-      repoInfo = await fetchGitHubRepo(parsed.owner, parsed.repo, githubToken);
+      repoInfo = await fetchGitHubRepo(parsed.owner, parsed.repo, accessToken);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to fetch repository';
       return NextResponse.json(
@@ -44,7 +72,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 5. Extract app information using AI
+    // 6. Extract app information using AI
     let extractedInfo: ExtractedAppInfo;
     try {
       extractedInfo = await extractAppInfoFromRepo(repoInfo);
@@ -56,7 +84,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 6. Return extracted information
+    // 7. Return extracted information
     return NextResponse.json({
       success: true,
       data: extractedInfo,
