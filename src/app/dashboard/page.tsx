@@ -149,8 +149,9 @@ export default function DashboardPage() {
 
                 {/* Sort Dropdown */}
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium text-gray-700">Sort:</span>
+                  <label htmlFor="sortBy" className="text-sm font-medium text-gray-700">Sort:</label>
                   <select
+                    id="sortBy"
                     value={sortBy}
                     onChange={(e) => setSortBy(e.target.value as 'newest' | 'oldest')}
                     className="px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
