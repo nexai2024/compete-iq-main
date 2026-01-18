@@ -1,10 +1,10 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import Link from 'next/link';
-import { Trash2 } from 'lucide-react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { DeleteConfirmationDialog } from './DeleteConfirmationDialog';
+import { ProjectListItem } from './ProjectListItem';
 
+// Moved type definition outside the component to prevent re-declaration on each render.
 type ProjectItem = { id: string; name?: string; updatedAt: string };
 
 export const ProjectList: React.FC = () => {
@@ -30,9 +30,15 @@ export const ProjectList: React.FC = () => {
     fetchProjects();
   }, []);
 
-  const handleDeleteClick = (project: ProjectItem) => {
+  /**
+   * Performance Insight:
+   * By wrapping this handler in `useCallback`, we create a stable function reference
+   * that won't change on re-renders. This allows the memoized `ProjectListItem`
+   * components to correctly skip re-rendering, as their `onDelete` prop is now stable.
+   */
+  const handleDeleteClick = useCallback((project: ProjectItem) => {
     setDeleteDialog({ open: true, project });
-  };
+  }, []);
 
   const handleDeleteConfirm = async () => {
     if (!deleteDialog.project) return;
@@ -66,24 +72,7 @@ export const ProjectList: React.FC = () => {
         <h3 className="text-lg font-semibold mb-3">Saved Projects</h3>
         <ul className="space-y-2">
           {projects.map((p) => (
-            <li key={p.id} className="flex justify-between items-center group">
-              <Link
-                href={`/new-analysis?projectId=${p.id}`}
-                className="text-blue-600 hover:underline flex-1"
-              >
-                {p.name || 'Untitled'}
-              </Link>
-              <div className="flex items-center gap-3">
-                <span className="text-sm text-gray-500">{new Date(p.updatedAt).toLocaleString()}</span>
-                <button
-                  onClick={() => handleDeleteClick(p)}
-                  className="p-1 text-gray-400 hover:text-red-600 transition-colors opacity-0 group-hover:opacity-100"
-                  aria-label="Delete project"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
-            </li>
+            <ProjectListItem key={p.id} project={p} onDelete={handleDeleteClick} />
           ))}
         </ul>
       </div>
