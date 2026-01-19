@@ -2,8 +2,9 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Trash2 } from 'lucide-react';
+import { Trash2, FileText, Plus } from 'lucide-react';
 import { DeleteConfirmationDialog } from './DeleteConfirmationDialog';
+import { EmptyState } from './EmptyState';
 
 type ProjectItem = { id: string; name?: string; updatedAt: string };
 
@@ -58,7 +59,23 @@ export const ProjectList: React.FC = () => {
     }
   };
 
-  if (!projects.length) return null;
+  if (projects.length === 0) {
+    return (
+      <EmptyState
+        icon={<FileText />}
+        title="No Saved Projects Yet"
+        description="Saved projects from your analyses will appear here. Create a new analysis to get started."
+      >
+        <Link
+          href="/new-analysis"
+          className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition"
+        >
+          <Plus className="w-5 h-5 mr-2" />
+          Start Analysis
+        </Link>
+      </EmptyState>
+    );
+  }
 
   return (
     <>
