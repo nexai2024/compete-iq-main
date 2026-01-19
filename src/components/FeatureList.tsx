@@ -1,10 +1,9 @@
 'use client';
 
-import React from 'react';
+import React, { useCallback } from 'react';
 import { X, Plus } from 'lucide-react';
-import { Input } from './ui/Input';
-import { Textarea } from './ui/Textarea';
 import { Button } from './ui/Button';
+import { FeatureListItem } from './FeatureListItem';
 
 export interface Feature {
   id: string;
@@ -30,16 +29,16 @@ export const FeatureList: React.FC<FeatureListProps> = ({ features, onChange, er
     onChange([...features, newFeature]);
   };
 
-  const removeFeature = (id: string) => {
+  const removeFeature = useCallback((id: string) => {
     if (features.length <= 1) return;
     onChange(features.filter((f) => f.id !== id));
-  };
+  }, [features, onChange]);
 
-  const updateFeature = (id: string, field: 'name' | 'description', value: string) => {
+  const updateFeature = useCallback((id: string, field: 'name' | 'description', value: string) => {
     onChange(
       features.map((f) => (f.id === id ? { ...f, [field]: value } : f))
     );
-  };
+  }, [features, onChange]);
 
   return (
     <div className="space-y-4">
@@ -54,39 +53,16 @@ export const FeatureList: React.FC<FeatureListProps> = ({ features, onChange, er
 
       <div className="space-y-6">
         {features.map((feature, index) => (
-          <div key={feature.id} className="relative border border-gray-200 rounded-lg p-4 bg-gray-50">
-            <div className="flex justify-between items-start mb-3">
-              <span className="text-sm font-medium text-gray-600">Feature {index + 1}</span>
-              <button
-                type="button"
-                onClick={() => removeFeature(feature.id)}
-                disabled={features.length <= 1}
-                className="text-gray-400 hover:text-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                aria-label="Remove feature"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="space-y-3">
-              <Input
-                placeholder="e.g., Real-time collaboration"
-                value={feature.name}
-                onChange={(e) => updateFeature(feature.id, 'name', e.target.value)}
-                error={errors[`features.${index}.name`]}
-                required
-              />
-
-              <Textarea
-                placeholder="Brief description of this feature (optional)"
-                value={feature.description}
-                onChange={(e) => updateFeature(feature.id, 'description', e.target.value)}
-                rows={2}
-                maxLength={1000}
-                error={errors[`features.${index}.description`]}
-              />
-            </div>
-          </div>
+          <FeatureListItem
+            key={feature.id}
+            feature={feature}
+            index={index}
+            isRemoveDisabled={features.length <= 1}
+            onRemove={removeFeature}
+            onUpdate={updateFeature}
+            errorName={errors[`features.${index}.name`]}
+            errorDescription={errors[`features.${index}.description`]}
+          />
         ))}
       </div>
 
