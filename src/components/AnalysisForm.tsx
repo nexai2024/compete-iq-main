@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useId } from 'react';
 import { useRouter } from 'next/navigation';
 import { Github, Loader2 } from 'lucide-react';
 import { Input } from './ui/Input';
@@ -43,6 +43,8 @@ export const AnalysisForm: React.FC = () => {
 
   // Debounce timer
   const saveTimer = useRef<number | null>(null);
+
+  const projectsId = useId();
 
   const validateForm = (): boolean => {
     setErrors({});
@@ -414,8 +416,11 @@ export const AnalysisForm: React.FC = () => {
       {/* Projects picker + save status */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-2">
-          <label className="text-sm text-gray-600">Saved Projects</label>
+          <label htmlFor={projectsId} className="text-sm text-gray-600">
+            Saved Projects
+          </label>
           <select
+            id={projectsId}
             value={projectId || ''}
             onChange={(e) => {
               const id = e.target.value;
