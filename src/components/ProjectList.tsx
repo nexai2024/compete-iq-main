@@ -1,11 +1,46 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Trash2 } from 'lucide-react';
 import { DeleteConfirmationDialog } from './DeleteConfirmationDialog';
 
 type ProjectItem = { id: string; name?: string; updatedAt: string };
+
+// Props for the memoized list item
+type ProjectListItemProps = {
+  project: ProjectItem;
+  onDelete: (project: ProjectItem) => void;
+};
+
+// Memoized ProjectListItem to prevent re-renders of the entire list
+const ProjectListItem = React.memo<ProjectListItemProps>(({ project, onDelete }) => {
+  // By memoizing the list item, we prevent it from re-rendering
+  // when the parent's state changes (e.g., when the delete dialog opens).
+  // The onClick handler calls the onDelete prop, which is a stable function
+  // passed down from the parent.
+  return (
+    <li className="flex justify-between items-center group">
+      <Link
+        href={`/new-analysis?projectId=${project.id}`}
+        className="text-blue-600 hover:underline flex-1"
+      >
+        {project.name || 'Untitled'}
+      </Link>
+      <div className="flex items-center gap-3">
+        <span className="text-sm text-gray-500">{new Date(project.updatedAt).toLocaleString()}</span>
+        <button
+          onClick={() => onDelete(project)}
+          className="p-1 text-gray-400 hover:text-red-600 transition-colors opacity-0 group-hover:opacity-100"
+          aria-label="Delete project"
+        >
+          <Trash2 className="w-4 h-4" />
+        </button>
+      </div>
+    </li>
+  );
+});
+ProjectListItem.displayName = 'ProjectListItem';
 
 export const ProjectList: React.FC = () => {
   const [projects, setProjects] = useState<ProjectItem[]>([]);
@@ -30,11 +65,15 @@ export const ProjectList: React.FC = () => {
     fetchProjects();
   }, []);
 
-  const handleDeleteClick = (project: ProjectItem) => {
+  const handleDeleteClick = useCallback((project: ProjectItem) => {
     setDeleteDialog({ open: true, project });
-  };
+  }, []);
 
-  const handleDeleteConfirm = async () => {
+  const handleCloseDialog = useCallback(() => {
+    setDeleteDialog({ open: false, project: null });
+  }, []);
+
+  const handleDeleteConfirm = useCallback(async () => {
     if (!deleteDialog.project) return;
 
     setIsDeleting(true);
@@ -56,7 +95,7 @@ export const ProjectList: React.FC = () => {
     } finally {
       setIsDeleting(false);
     }
-  };
+  }, [deleteDialog.project]);
 
   if (!projects.length) return null;
 
@@ -66,24 +105,7 @@ export const ProjectList: React.FC = () => {
         <h3 className="text-lg font-semibold mb-3">Saved Projects</h3>
         <ul className="space-y-2">
           {projects.map((p) => (
-            <li key={p.id} className="flex justify-between items-center group">
-              <Link
-                href={`/new-analysis?projectId=${p.id}`}
-                className="text-blue-600 hover:underline flex-1"
-              >
-                {p.name || 'Untitled'}
-              </Link>
-              <div className="flex items-center gap-3">
-                <span className="text-sm text-gray-500">{new Date(p.updatedAt).toLocaleString()}</span>
-                <button
-                  onClick={() => handleDeleteClick(p)}
-                  className="p-1 text-gray-400 hover:text-red-600 transition-colors opacity-0 group-hover:opacity-100"
-                  aria-label="Delete project"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
-            </li>
+            <ProjectListItem key={p.id} project={p} onDelete={handleDeleteClick} />
           ))}
         </ul>
       </div>
@@ -91,7 +113,7 @@ export const ProjectList: React.FC = () => {
       {deleteDialog.project && (
         <DeleteConfirmationDialog
           open={deleteDialog.open}
-          onClose={() => setDeleteDialog({ open: false, project: null })}
+          onClose={handleCloseDialog}
           onConfirm={handleDeleteConfirm}
           itemName={deleteDialog.project.name || 'Untitled'}
           itemType="project"
