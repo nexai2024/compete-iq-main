@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { Plus, Loader2 } from 'lucide-react';
 import { ProjectList } from '@/components/ProjectList';
@@ -13,6 +13,10 @@ export default function DashboardPage() {
   const [error, setError] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [sortBy, setSortBy] = useState<'newest' | 'oldest'>('newest');
+
+  const handleDelete = useCallback((id: string) => {
+    setAnalyses((prev) => prev.filter((a) => a.id !== id));
+  }, []);
 
   // Fetch analyses
   useEffect(() => {
@@ -168,10 +172,7 @@ export default function DashboardPage() {
                 <AnalysisCard
                   key={analysis.id}
                   {...analysis}
-                  onDelete={() => {
-                    // Remove from local state and refetch
-                    setAnalyses((prev) => prev.filter((a) => a.id !== analysis.id));
-                  }}
+                  onDelete={handleDelete}
                 />
               ))}
             </div>
