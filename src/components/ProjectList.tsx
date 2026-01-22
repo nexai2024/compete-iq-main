@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Trash2 } from 'lucide-react';
+import { FileText, Trash2 } from 'lucide-react';
 import { DeleteConfirmationDialog } from './DeleteConfirmationDialog';
 
 type ProjectItem = { id: string; name?: string; updatedAt: string };
@@ -58,7 +58,25 @@ export const ProjectList: React.FC = () => {
     }
   };
 
-  if (!projects.length) return null;
+  if (projects.length === 0) {
+    return (
+      <div className="bg-white rounded-lg shadow-md p-6 text-center">
+        <FileText className="mx-auto h-12 w-12 text-gray-400" />
+        <h3 className="mt-2 text-lg font-semibold">No projects yet</h3>
+        <p className="mt-1 text-sm text-gray-500">
+          Start by creating a new analysis to save your work.
+        </p>
+        <div className="mt-6">
+          <Link
+            href="/new-analysis"
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          >
+            New Analysis
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
