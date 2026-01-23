@@ -495,7 +495,6 @@ export const AnalysisForm: React.FC = () => {
           type="submit"
           size="lg"
           isLoading={isSubmitting}
-          disabled={isSubmitting}
         >
           {isSubmitting ? 'Creating Analysis...' : 'Analyze My App'}
         </Button>
