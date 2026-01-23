@@ -1,0 +1,3 @@
+## 2024-07-25 - Keep Commits Atomic: Revert Unintentional Lock File Changes
+**Learning:** Running `npm install` can unintentionally upgrade dependencies and modify the `package-lock.json` file. Including these changes in a PR for a specific feature or optimization violates the principle of atomic commits, mixing dependency updates with application code changes. This makes rollbacks harder and introduces unnecessary risk.
+**Action:** Before submitting, always run `git status` to check for unintended modifications to lock files. If any are found, revert them using `git restore <lockfile>` to ensure the PR remains focused on its intended scope.
