@@ -1,5 +1,4 @@
 import type {
-  Analysis,
   AnalysisStatus,
   Competitor,
   CompetitorType,
@@ -38,24 +37,40 @@ export interface SendPersonaMessageRequest {
 
 // API Response Types
 
+export interface OverviewData {
+  analysis: {
+    id: string;
+    appName: string;
+    targetAudience: string;
+    createdAt: Date;
+    status: AnalysisStatus;
+    aiProcessingStage: string | null;
+  };
+  competitors: (Competitor & { features: CompetitorFeature[] })[];
+  comparisonParameters: ComparisonParameter[];
+  featureMatrixScores: FeatureMatrixScore[];
+  positioningData: PositioningData[];
+  simulatedReviews: SimulatedReview[];
+}
+
+export interface IntelligenceData {
+  marketIntelligence: MarketIntelligence | null;
+}
+
+export interface GapsData {
+  userFeatures: UserFeature[];
+  blueOceanInsight: BlueOceanInsight | null;
+  gapAnalysisItems: GapAnalysisItem[];
+}
+
+export interface PersonasData {
+  personas: Persona[];
+}
+
 export interface AnalysisStatusResponse {
   status: AnalysisStatus;
   aiProcessingStage?: string | null;
   errorMessage?: string | null;
-}
-
-export interface FullAnalysisResponse {
-  analysis: Analysis;
-  userFeatures: UserFeature[];
-  competitors: (Competitor & { features: CompetitorFeature[] })[];
-  comparisonParameters: ComparisonParameter[];
-  featureMatrixScores: FeatureMatrixScore[];
-  gapAnalysisItems: GapAnalysisItem[];
-  blueOceanInsight: BlueOceanInsight | null;
-  personas: Persona[];
-  positioningData: PositioningData[];
-  simulatedReviews: SimulatedReview[];
-  marketIntelligence: MarketIntelligence | null;
 }
 
 export interface AnalysisListItem {
