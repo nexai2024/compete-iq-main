@@ -26,13 +26,15 @@ export interface ExtractedAppInfo {
  */
 export async function fetchGitHubRepo(
   owner: string,
-  repo: string,
-  githubToken?: string
+  repo: string
 ): Promise<GitHubRepoInfo> {
   const headers: HeadersInit = {
     Accept: 'application/vnd.github.v3+json',
   };
 
+  // 🛡️ SECURITY: Use a server-side token to prevent SSRF vulnerabilities.
+  // Never use a client-provided token in server-side requests.
+  const githubToken = process.env.GITHUB_ACCESS_TOKEN;
   if (githubToken) {
     headers.Authorization = `token ${githubToken}`;
   }

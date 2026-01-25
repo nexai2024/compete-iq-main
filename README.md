@@ -42,7 +42,7 @@ CompeteIQ helps founders analyze their app ideas against the current market usin
 ### Prerequisites
 - Node.js 18+
 - PostgreSQL database (local or Vercel Postgres)
-- API keys for: Clerk, OpenAI, Perplexity
+- API keys for: Clerk, OpenAI, Perplexity, GitHub
 
 ### 1. Install Dependencies
 
@@ -72,6 +72,9 @@ NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL="/dashboard"
 OPENAI_API_KEY="sk-..."
 PERPLEXITY_API_KEY="pplx-..."
 
+# GitHub API (for repository analysis)
+GITHUB_ACCESS_TOKEN="ghp_..."
+
 # App Configuration
 NEXT_PUBLIC_APP_URL="http://localhost:3000"
 NODE_ENV="development"
@@ -81,6 +84,7 @@ NODE_ENV="development"
 - Clerk: https://dashboard.clerk.com
 - OpenAI: https://platform.openai.com/api-keys
 - Perplexity: https://www.perplexity.ai/settings/api
+- GitHub: https://github.com/settings/tokens (select `repo` scope)
 
 ### 3. Set Up Database
 
