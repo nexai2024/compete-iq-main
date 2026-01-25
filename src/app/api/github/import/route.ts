@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
 
     // 2. Parse request body
     const body = await request.json();
-    const { githubUrl, githubToken } = body;
+    const { githubUrl } = body;
 
     if (!githubUrl || typeof githubUrl !== 'string') {
       return NextResponse.json(
@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
     // 4. Fetch repository data
     let repoInfo;
     try {
-      repoInfo = await fetchGitHubRepo(parsed.owner, parsed.repo, githubToken);
+      repoInfo = await fetchGitHubRepo(parsed.owner, parsed.repo);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to fetch repository';
       return NextResponse.json(
