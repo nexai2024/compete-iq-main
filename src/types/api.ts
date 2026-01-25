@@ -58,6 +58,30 @@ export interface FullAnalysisResponse {
   marketIntelligence: MarketIntelligence | null;
 }
 
+// Granular API Responses for lazy loading dashboard tabs
+export interface OverviewDataResponse {
+  appName: string;
+  competitors: (Competitor & { features: CompetitorFeature[] })[];
+  comparisonParameters: ComparisonParameter[];
+  featureMatrixScores: FeatureMatrixScore[];
+  positioningData: (PositioningData & { competitorType?: CompetitorType })[];
+  simulatedReviews: SimulatedReview[];
+}
+
+export interface GapsDataResponse {
+  userFeatures: UserFeature[];
+  gapAnalysisItems: GapAnalysisItem[];
+  blueOceanInsight: BlueOceanInsight | null;
+}
+
+export interface PersonasDataResponse {
+  personas: Persona[];
+}
+
+export interface MarketIntelligenceDataResponse {
+  marketIntelligence: MarketIntelligence | null;
+}
+
 export interface AnalysisListItem {
   id: string;
   appName: string;
