@@ -20,7 +20,7 @@ import { ExportCenter } from './ExportCenter';
 import { DeleteConfirmationDialog } from './DeleteConfirmationDialog';
 import { MarketIntelligenceComponent } from './MarketIntelligence';
 import { PricingComparison } from './PricingComparison';
-import type { FullAnalysisResponse } from '@/types/api';
+import type { FullAnalysisResponse, MarketIntelligenceResponse } from '@/types/api';
 import type { PositioningData } from '@/types/database';
 
 interface AnalysisDashboardProps {
@@ -36,6 +36,32 @@ export const AnalysisDashboard: React.FC<AnalysisDashboardProps> = ({ analysisId
   const [isDeleting, setIsDeleting] = useState(false);
   const [isRerunning, setIsRerunning] = useState(false);
   const [showRerunDialog, setShowRerunDialog] = useState(false);
+  const [marketIntel, setMarketIntel] = useState<MarketIntelligenceResponse | null>(null);
+  const [isIntelLoading, setIsIntelLoading] = useState(false);
+  const [intelError, setIntelError] = useState<string | null>(null);
+  const [hasFetchedIntel, setHasFetchedIntel] = useState(false);
+
+  // ⚡ Bolt: Lazy-load market intelligence data to improve initial dashboard load time.
+  // This data is fetched only when the user clicks the "Market Intelligence" tab.
+  const fetchMarketIntelligence = async () => {
+    if (hasFetchedIntel) return; // Don't refetch
+
+    setIsIntelLoading(true);
+    setHasFetchedIntel(true);
+    try {
+      const response = await fetch(`/api/analyses/${analysisId}/market-intelligence`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch market intelligence data');
+      }
+      const intelData: MarketIntelligenceResponse = await response.json();
+      setMarketIntel(intelData);
+    } catch (err) {
+      console.error('Error fetching market intelligence:', err);
+      setIntelError('Failed to load market intelligence data.');
+    } finally {
+      setIsIntelLoading(false);
+    }
+  };
 
   useEffect(() => {
     const fetchAnalysis = async () => {
@@ -194,7 +220,15 @@ export const AnalysisDashboard: React.FC<AnalysisDashboardProps> = ({ analysisId
         </div>
 
         {/* Tabs */}
-        <Tabs defaultValue="overview" className="space-y-6">
+        <Tabs
+          defaultValue="overview"
+          className="space-y-6"
+          onValueChange={(value) => {
+            if (value === 'intelligence') {
+              fetchMarketIntelligence();
+            }
+          }}
+        >
           <div className="bg-white rounded-lg shadow-md">
             <TabsList className="px-6">
               <TabsTrigger value="overview">Market Overview</TabsTrigger>
@@ -356,9 +390,21 @@ export const AnalysisDashboard: React.FC<AnalysisDashboardProps> = ({ analysisId
           </TabsContent>
 
           <TabsContent value="intelligence">
-            {data.marketIntelligence ? (
-              <MarketIntelligenceComponent data={data.marketIntelligence} />
-            ) : (
+            {isIntelLoading && (
+              <div className="bg-white rounded-lg shadow-md p-6 flex justify-center items-center">
+                <Loader2 className="w-6 h-6 text-blue-600 animate-spin mr-2" />
+                <span>Loading Market Intelligence...</span>
+              </div>
+            )}
+            {intelError && (
+              <div className="bg-white rounded-lg shadow-md p-6 text-center text-red-600">
+                <p>{intelError}</p>
+              </div>
+            )}
+            {!isIntelLoading && !intelError && marketIntel && (
+              <MarketIntelligenceComponent data={marketIntel} />
+            )}
+            {!isIntelLoading && !intelError && !marketIntel && hasFetchedIntel && (
               <div className="bg-white rounded-lg shadow-md p-6">
                 <p className="text-gray-500">
                   Market intelligence is being generated. This comprehensive analysis will include industry
