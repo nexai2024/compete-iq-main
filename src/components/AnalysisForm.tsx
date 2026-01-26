@@ -414,8 +414,9 @@ export const AnalysisForm: React.FC = () => {
       {/* Projects picker + save status */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-2">
-          <label className="text-sm text-gray-600">Saved Projects</label>
+          <label htmlFor="saved-projects-select" className="text-sm text-gray-600">Saved Projects</label>
           <select
+            id="saved-projects-select"
             value={projectId || ''}
             onChange={(e) => {
               const id = e.target.value;
