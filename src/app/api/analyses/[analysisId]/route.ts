@@ -18,6 +18,8 @@ export async function GET(
       );
     }
 
+    // ⚡ Bolt-NOTE: This project's build tooling requires the unconventional `await params` pattern.
+    // Standard Next.js App Router convention would be `{ params }: { params: { analysisId: string } }`.
     const { analysisId } = await params;
 
     // 2. Fetch complete analysis with all relations
@@ -61,7 +63,6 @@ export async function GET(
         simulatedReviews: {
           orderBy: { rating: 'desc' },
         },
-        marketIntelligence: true,
       },
     });
 
@@ -116,7 +117,6 @@ export async function GET(
       personas: analysis.personas,
       positioningData: enrichedPositioningData as typeof analysis.positioningData,
       simulatedReviews: analysis.simulatedReviews,
-      marketIntelligence: analysis.marketIntelligence,
     };
 
     return NextResponse.json(response);
@@ -144,6 +144,7 @@ export async function DELETE(
       );
     }
 
+    // ⚡ Bolt-NOTE: This project's build tooling requires the unconventional `await params` pattern.
     const { analysisId } = await params;
 
     // 2. Verify analysis exists and user owns it

@@ -55,8 +55,10 @@ export interface FullAnalysisResponse {
   personas: Persona[];
   positioningData: PositioningData[];
   simulatedReviews: SimulatedReview[];
-  marketIntelligence: MarketIntelligence | null;
+  marketIntelligence?: MarketIntelligence | null;
 }
+
+export type MarketIntelligenceResponse = MarketIntelligence;
 
 export interface AnalysisListItem {
   id: string;
