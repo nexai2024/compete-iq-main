@@ -2,10 +2,10 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { Github, Loader2 } from 'lucide-react';
+import { Github } from 'lucide-react';
 import { Input } from './ui/Input';
 import { Textarea } from './ui/Textarea';
-import { Button } from './ui/Button';
+import { LoadingButton } from './ui/LoadingButton';
 import { FeatureList, Feature } from './FeatureList';
 import { createAnalysisSchema } from '@/lib/utils/validation';
 import type { CreateAnalysisRequest, ProjectData } from '@/types/api';
@@ -329,13 +329,13 @@ export const AnalysisForm: React.FC = () => {
                 Automatically extract app name, description, and features from your GitHub repository
               </p>
             </div>
-            <Button
+            <LoadingButton
               type="button"
               variant="outline"
               onClick={() => setShowGitHubImport(true)}
             >
               Import from GitHub
-            </Button>
+            </LoadingButton>
           </div>
         ) : (
           <div className="space-y-4">
@@ -344,7 +344,7 @@ export const AnalysisForm: React.FC = () => {
                 <Github className="w-5 h-5" />
                 Import from GitHub
               </h3>
-              <Button
+              <LoadingButton
                 type="button"
                 variant="ghost"
                 size="sm"
@@ -356,7 +356,7 @@ export const AnalysisForm: React.FC = () => {
                 }}
               >
                 Cancel
-              </Button>
+              </LoadingButton>
             </div>
 
             <div>
@@ -388,25 +388,17 @@ export const AnalysisForm: React.FC = () => {
               </div>
             )}
 
-            <Button
+            <LoadingButton
               type="button"
               onClick={handleGitHubImport}
               isLoading={isImporting}
+              loadingText="Analyzing Repository..."
               disabled={isImporting || !githubUrl.trim()}
               className="w-full"
             >
-              {isImporting ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Analyzing Repository...
-                </>
-              ) : (
-                <>
-                  <Github className="w-4 h-4 mr-2" />
-                  Import Repository
-                </>
-              )}
-            </Button>
+              <Github className="w-4 h-4 mr-2" />
+              Import Repository
+            </LoadingButton>
           </div>
         )}
       </div>
@@ -491,14 +483,15 @@ export const AnalysisForm: React.FC = () => {
 
       {/* Submit Button */}
       <div className="flex justify-end pt-6 border-t">
-        <Button
+        <LoadingButton
           type="submit"
           size="lg"
           isLoading={isSubmitting}
+          loadingText="Creating Analysis..."
           disabled={isSubmitting}
         >
-          {isSubmitting ? 'Creating Analysis...' : 'Analyze My App'}
-        </Button>
+          Analyze My App
+        </LoadingButton>
       </div>
     </form>
   );
