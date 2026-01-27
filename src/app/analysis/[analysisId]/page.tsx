@@ -49,7 +49,7 @@ export default function AnalysisPage() {
 
     // Set up polling if still processing
     if (isPolling) {
-      pollInterval = setInterval(checkStatus, 2000); // Poll every 2 seconds
+      pollInterval = setInterval(checkStatus, 5000); // Poll every 5 seconds
     }
 
     return () => {
