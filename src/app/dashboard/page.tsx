@@ -3,9 +3,32 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Plus, Loader2 } from 'lucide-react';
-import { ProjectList } from '@/components/ProjectList';
+import dynamic from 'next/dynamic';
 import { AnalysisCard } from '@/components/AnalysisCard';
 import type { AnalysisListItem, AnalysisListResponse } from '@/types/api';
+
+// Dynamically import ProjectList to lazy-load it, improving initial page load performance.
+// The component and its data fetching are deferred until the main content is rendered.
+const ProjectListLoader = () => (
+  <div className="mt-8">
+    <div className="bg-white rounded-lg shadow-md p-6 animate-pulse">
+      <div className="h-6 bg-gray-200 rounded w-1/4 mb-4"></div>
+      <div className="space-y-3">
+        <div className="h-4 bg-gray-200 rounded w-full"></div>
+        <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+        <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+      </div>
+    </div>
+  </div>
+);
+
+const ProjectList = dynamic(
+  () => import('@/components/ProjectList').then((mod) => mod.ProjectList),
+  {
+    loading: () => <ProjectListLoader />,
+    ssr: false, // This component is client-side only
+  }
+);
 
 export default function DashboardPage() {
   const [analyses, setAnalyses] = useState<AnalysisListItem[]>([]);
