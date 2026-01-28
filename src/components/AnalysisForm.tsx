@@ -333,7 +333,9 @@ export const AnalysisForm: React.FC = () => {
               type="button"
               variant="outline"
               onClick={() => setShowGitHubImport(true)}
+              className="flex items-center gap-2"
             >
+              <Github className="w-4 h-4" />
               Import from GitHub
             </Button>
           </div>
