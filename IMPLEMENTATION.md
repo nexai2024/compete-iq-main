@@ -223,30 +223,13 @@ compete-iq-main/
 
 ## 🔧 Environment Variables Required
 
-Create `.env.local` with the following:
+Create a `.env.local` file by copying the example:
 
 ```bash
-# Database (use Vercel Postgres or local Postgres)
-DATABASE_URL="postgresql://..."
-
-# Clerk Authentication
-NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="pk_test_..."
-CLERK_SECRET_KEY="sk_test_..."
-NEXT_PUBLIC_CLERK_SIGN_IN_URL="/sign-in"
-NEXT_PUBLIC_CLERK_SIGN_UP_URL="/sign-up"
-NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL="/dashboard"
-NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL="/dashboard"
-
-# OpenAI API
-OPENAI_API_KEY="sk-..."
-
-# Perplexity API
-PERPLEXITY_API_KEY="pplx-..."
-
-# App Configuration
-NEXT_PUBLIC_APP_URL="http://localhost:3000"
-NODE_ENV="development"
+cp .env.example .env.local
 ```
+
+Then, fill in the required values in the new `.env.local` file.
 
 ---
 
