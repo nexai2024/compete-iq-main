@@ -40,9 +40,16 @@ export const AnalysisForm: React.FC = () => {
   const [isImporting, setIsImporting] = useState(false);
   const [importError, setImportError] = useState<string>('');
   const [showGitHubImport, setShowGitHubImport] = useState(false);
+  const githubUrlInputRef = useRef<HTMLInputElement>(null);
 
   // Debounce timer
   const saveTimer = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (showGitHubImport) {
+      setTimeout(() => githubUrlInputRef.current?.focus(), 100);
+    }
+  }, [showGitHubImport]);
 
   const validateForm = (): boolean => {
     setErrors({});
@@ -361,6 +368,7 @@ export const AnalysisForm: React.FC = () => {
 
             <div>
               <Input
+                ref={githubUrlInputRef}
                 label="GitHub Repository URL"
                 placeholder="https://github.com/owner/repo or owner/repo"
                 value={githubUrl}
