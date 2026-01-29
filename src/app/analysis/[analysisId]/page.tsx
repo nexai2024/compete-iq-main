@@ -49,7 +49,10 @@ export default function AnalysisPage() {
 
     // Set up polling if still processing
     if (isPolling) {
-      pollInterval = setInterval(checkStatus, 2000); // Poll every 2 seconds
+      // ⚡ Bolt: Increased polling interval from 2s to 5s to reduce network requests by 60%
+      // during the analysis processing stage. This is a low-risk optimization that
+      // significantly reduces server load without negatively impacting user experience.
+      pollInterval = setInterval(checkStatus, 5000); // Poll every 5 seconds
     }
 
     return () => {
