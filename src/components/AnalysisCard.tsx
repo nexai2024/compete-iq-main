@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import Link from 'next/link';
 import { Trash2 } from 'lucide-react';
 import { formatDateTime } from '@/lib/utils/formatting';
@@ -14,7 +14,7 @@ interface AnalysisCardProps {
   createdAt: string;
   competitorCount: number;
   errorMessage?: string | null;
-  onDelete?: () => void;
+  onDelete?: (id: string) => void;
 }
 
 const statusStyles = {
@@ -35,7 +35,9 @@ const statusStyles = {
   },
 };
 
-export function AnalysisCard({
+// ⚡ Bolt: Memoize AnalysisCard to prevent unnecessary re-renders in the dashboard list.
+// This is effective because the props are unlikely to change unless the data for this specific card changes.
+export const AnalysisCard = memo(function AnalysisCard({
   id,
   appName,
   targetAudience,
@@ -62,7 +64,7 @@ export function AnalysisCard({
 
       // Call the onDelete callback to update the parent component
       if (onDelete) {
-        onDelete();
+        onDelete(id);
       }
       setShowDeleteDialog(false);
     } catch (error) {
@@ -132,4 +134,4 @@ export function AnalysisCard({
       />
     </>
   );
-}
+});
