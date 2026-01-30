@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { Plus, Loader2 } from 'lucide-react';
 import { ProjectList } from '@/components/ProjectList';
@@ -49,6 +49,14 @@ export default function DashboardPage() {
     setError(null);
     setIsLoading(true);
   };
+
+  // ⚡ Bolt: Stabilize onDelete handler with useCallback.
+  // This prevents re-creating the function on every render, which is crucial
+  // for React.memo to work effectively on the AnalysisCard component.
+  const handleAnalysisDeleted = useCallback((deletedId: string) => {
+    // Remove from local state to provide immediate feedback to the user.
+    setAnalyses((prev) => prev.filter((a) => a.id !== deletedId));
+  }, []);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -168,10 +176,7 @@ export default function DashboardPage() {
                 <AnalysisCard
                   key={analysis.id}
                   {...analysis}
-                  onDelete={() => {
-                    // Remove from local state and refetch
-                    setAnalyses((prev) => prev.filter((a) => a.id !== analysis.id));
-                  }}
+                  onDelete={handleAnalysisDeleted}
                 />
               ))}
             </div>
