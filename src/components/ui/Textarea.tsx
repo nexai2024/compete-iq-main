@@ -13,6 +13,13 @@ export const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
     const textareaId = id || generatedId;
     const currentLength = value ? String(value).length : 0;
 
+    const charCountColor =
+      maxLength && currentLength >= maxLength
+        ? 'text-red-600'
+        : maxLength && currentLength > maxLength * 0.9
+        ? 'text-yellow-500'
+        : 'text-gray-500';
+
     return (
       <div className="w-full">
         {label && (
@@ -39,7 +46,7 @@ export const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
             {helperText && !error && <p className="text-sm text-gray-500">{helperText}</p>}
           </div>
           {showCharCount && maxLength && (
-            <p className={`text-sm ${currentLength > maxLength * 0.9 ? 'text-orange-600' : 'text-gray-500'}`}>
+            <p className={`text-sm ${charCountColor}`}>
               {currentLength} / {maxLength}
             </p>
           )}
