@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Loader2, Trash2, RefreshCw } from 'lucide-react';
@@ -59,6 +59,16 @@ export const AnalysisDashboard: React.FC<AnalysisDashboardProps> = ({ analysisId
     fetchAnalysis();
   }, [analysisId]);
 
+  // Memoize counts to avoid re-filtering the gapAnalysisItems array on every re-render
+  // This must be called before early returns to satisfy rules of hooks
+  const { deficitsCount, standoutsCount } = useMemo(() => {
+    if (!data) return { deficitsCount: 0, standoutsCount: 0 };
+    return {
+      deficitsCount: data.gapAnalysisItems.filter((g) => g.type === 'deficit').length,
+      standoutsCount: data.gapAnalysisItems.filter((g) => g.type === 'standout').length,
+    };
+  }, [data]);
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -81,9 +91,6 @@ export const AnalysisDashboard: React.FC<AnalysisDashboardProps> = ({ analysisId
   }
 
   const { analysis, competitors, gapAnalysisItems, personas } = data;
-
-  const deficitsCount = gapAnalysisItems.filter((g) => g.type === 'deficit').length;
-  const standoutsCount = gapAnalysisItems.filter((g) => g.type === 'standout').length;
 
   const handleDelete = async () => {
     setIsDeleting(true);
