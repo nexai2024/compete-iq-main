@@ -1,0 +1,3 @@
+## 2025-05-22 - Improving Form Feedback and Accessibility
+**Learning:** Combining several micro-UX improvements (accessibility, feedback, and visual polish) in a single form creates a noticeably more professional and trustworthy user experience. The use of `useId` for accessibility and real-time status updates via `setInterval` are small touches that users might not consciously notice but collectively contribute to a sense of quality.
+**Action:** When working on complex forms, always look for opportunities to: 1) Link labels and inputs using `useId`, 2) Provide real-time status for auto-saving, and 3) Use toasts for key success/error events.

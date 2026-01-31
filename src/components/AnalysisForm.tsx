@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useId } from 'react';
 import { useRouter } from 'next/navigation';
-import { Github, Loader2 } from 'lucide-react';
+import { Github } from 'lucide-react';
+import { useToast } from './ui/Toast';
 import { Input } from './ui/Input';
 import { Textarea } from './ui/Textarea';
 import { Button } from './ui/Button';
@@ -14,6 +15,8 @@ type ProjectListItem = { id: string; name?: string; data: ProjectData; updatedAt
 
 export const AnalysisForm: React.FC = () => {
   const router = useRouter();
+  const { addToast } = useToast();
+  const projectSelectId = useId();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [serverError, setServerError] = useState<string>('');
@@ -23,6 +26,13 @@ export const AnalysisForm: React.FC = () => {
   const [projects, setProjects] = useState<ProjectListItem[]>([]);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [lastSavedAt, setLastSavedAt] = useState<number | null>(null);
+  const [now, setNow] = useState(Date.now());
+
+  // Update 'now' every second to keep "Saved Xs ago" timer fresh
+  useEffect(() => {
+    const interval = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   // Form state
   const [appName, setAppName] = useState('');
@@ -155,7 +165,7 @@ export const AnalysisForm: React.FC = () => {
     fetchProjects();
   }, [fetchProjects]);
 
-  const loadProject = (p: ProjectListItem) => {
+  const loadProject = useCallback((p: ProjectListItem) => {
     setProjectId(p.id);
     setAppName(p.data.appName || '');
     setTargetAudience(p.data.targetAudience || '');
@@ -165,7 +175,13 @@ export const AnalysisForm: React.FC = () => {
     } else {
       setFeatures([{ id: '1', name: '', description: '' }, { id: '2', name: '', description: '' }, { id: '3', name: '', description: '' }]);
     }
-  };
+
+    addToast({
+      type: 'success',
+      title: 'Project loaded',
+      message: `"${p.name || 'Untitled'}" has been loaded successfully.`,
+    });
+  }, [addToast]);
 
   // Load project from URL query param if present
   useEffect(() => {
@@ -186,7 +202,7 @@ export const AnalysisForm: React.FC = () => {
     } catch {
       // ignore (window may not be available in some environments)
     }
-  }, []);
+  }, [loadProject]);
 
   const handleGitHubImport = async () => {
     if (!githubUrl.trim()) {
@@ -245,10 +261,22 @@ export const AnalysisForm: React.FC = () => {
         setGithubUrl('');
         setGithubToken('');
         setShowGitHubImport(false);
+
+        addToast({
+          type: 'success',
+          title: 'GitHub Import Successful',
+          message: `Successfully imported data from ${githubUrl}`,
+        });
       }
     } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to import from GitHub';
       console.error('Error importing from GitHub:', error);
-      setImportError(error instanceof Error ? error.message : 'Failed to import from GitHub');
+      setImportError(message);
+      addToast({
+        type: 'error',
+        title: 'Import Failed',
+        message: message,
+      });
     } finally {
       setIsImporting(false);
     }
@@ -395,12 +423,7 @@ export const AnalysisForm: React.FC = () => {
               disabled={isImporting || !githubUrl.trim()}
               className="w-full"
             >
-              {isImporting ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Analyzing Repository...
-                </>
-              ) : (
+              {isImporting ? 'Analyzing Repository...' : (
                 <>
                   <Github className="w-4 h-4 mr-2" />
                   Import Repository
@@ -414,15 +437,18 @@ export const AnalysisForm: React.FC = () => {
       {/* Projects picker + save status */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-2">
-          <label className="text-sm text-gray-600">Saved Projects</label>
+          <label htmlFor={projectSelectId} className="text-sm font-medium text-gray-700">
+            Saved Projects
+          </label>
           <select
+            id={projectSelectId}
             value={projectId || ''}
             onChange={(e) => {
               const id = e.target.value;
               const selected = projects.find((p) => p.id === id);
               if (selected) loadProject(selected);
             }}
-            className="border rounded p-2"
+            className="border-gray-300 rounded-md p-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
           >
             <option value="">-- Select project --</option>
             {projects.map((p) => (
@@ -436,7 +462,7 @@ export const AnalysisForm: React.FC = () => {
         <div className="text-sm text-gray-500">
           {saveStatus === 'saving' && <span>Saving…</span>}
           {saveStatus === 'saved' && lastSavedAt && (
-            <span>Saved {Math.round((Date.now() - lastSavedAt) / 1000)}s ago</span>
+            <span>Saved {Math.max(0, Math.round((now - lastSavedAt) / 1000))}s ago</span>
           )}
           {saveStatus === 'error' && <span className="text-red-600">Error saving</span>}
         </div>
