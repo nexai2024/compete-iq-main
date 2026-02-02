@@ -1,5 +1,6 @@
 'use client';
 
+import React, { useMemo } from 'react';
 import type { FeatureMatrixScore, ComparisonParameter } from '@/types/database';
 
 interface FeatureMatrixProps {
@@ -27,23 +28,28 @@ export function FeatureMatrix({
   parameters,
   scores,
 }: FeatureMatrixProps) {
+  // Optimization: Pre-process scores into a lookup map for O(1) access instead of O(N) .find() in render loop
+  const scoreMap = useMemo(() => {
+    const map = new Map<string, number>();
+    scores.forEach((s) => {
+      // Create a unique key based on entity type and ID.
+      // For user_app, we ignore the entityId to match the original lookup logic.
+      const key = s.entityType === 'user_app'
+        ? `user_app_${s.parameterId}`
+        : `competitor_${s.entityId}_${s.parameterId}`;
+      map.set(key, s.score);
+    });
+    return map;
+  }, [scores]);
+
   // Find user app scores (entityType === 'user_app')
   const getUserScore = (parameterId: string): number | null => {
-    const score = scores.find(
-      (s) => s.parameterId === parameterId && s.entityType === 'user_app'
-    );
-    return score?.score ?? null;
+    return scoreMap.get(`user_app_${parameterId}`) ?? null;
   };
 
   // Find competitor scores
   const getCompetitorScore = (competitorId: string, parameterId: string): number | null => {
-    const score = scores.find(
-      (s) =>
-        s.parameterId === parameterId &&
-        s.entityType === 'competitor' &&
-        s.entityId === competitorId
-    );
-    return score?.score ?? null;
+    return scoreMap.get(`competitor_${competitorId}_${parameterId}`) ?? null;
   };
 
   if (!parameters || parameters.length === 0) {
