@@ -1,6 +1,6 @@
 import OpenAI from 'openai';
 import { prisma } from '@/lib/db/prisma';
-import type { Analysis, UserFeature, Competitor, CompetitorFeature } from '@/types/database';
+import type { Analysis, UserFeature, Competitor, CompetitorFeature, NormalizedFeatureGroup, ComparisonParameter } from '@/types/database';
 import type { ComparisonParameterData, FeatureScoreData } from '@/types/analysis';
 
 const openai = new OpenAI({
@@ -11,26 +11,23 @@ const openai = new OpenAI({
  * Get normalized feature summary for a set of features
  * Groups features by their normalized groups and returns a summary
  */
-async function getNormalizedFeatureSummary(
+export async function getNormalizedFeatureSummary(
   features: (UserFeature | CompetitorFeature)[],
-  analysisId: string
+  normalizedGroups: NormalizedFeatureGroup[]
 ): Promise<string> {
-  // Fetch normalized groups for this analysis
-  const normalizedGroups = await prisma.normalizedFeatureGroup.findMany({
-    where: { analysisId },
-  });
+  // Create a map for faster group lookups
+  const groupsMap = new Map(normalizedGroups.map(g => [g.id, g.canonicalName]));
 
   // Group features by normalized group
   const groupedFeatures = new Map<string, (UserFeature | CompetitorFeature)[]>();
   const ungroupedFeatures: (UserFeature | CompetitorFeature)[] = [];
 
   for (const feature of features) {
-    // Type guard to check if feature has normalizedGroupId
-    const normalizedGroupId = 'normalizedGroupId' in feature ? feature.normalizedGroupId : null;
+    // Both UserFeature and CompetitorFeature have normalizedGroupId
+    const normalizedGroupId = (feature as { normalizedGroupId?: string | null }).normalizedGroupId;
     if (normalizedGroupId) {
-      const group = normalizedGroups.find((g: { id: string }) => g.id === normalizedGroupId);
-      if (group) {
-        const groupName = group.canonicalName;
+      const groupName = groupsMap.get(normalizedGroupId);
+      if (groupName) {
         if (!groupedFeatures.has(groupName)) {
           groupedFeatures.set(groupName, []);
         }
@@ -73,10 +70,15 @@ export async function generateComparisonParameters(
   competitors: (Competitor & { features: CompetitorFeature[] })[]
 ): Promise<ComparisonParameterData[]> {
   try {
+    // Fetch normalized groups for this analysis
+    const normalizedGroups = await prisma.normalizedFeatureGroup.findMany({
+      where: { analysisId: analysis.id },
+    });
+
     // Get normalized feature summary for user features
     const userFeaturesSummary = await getNormalizedFeatureSummary(
       analysis.userFeatures,
-      analysis.id
+      normalizedGroups
     );
     
     type CompetitorWithFeatures = typeof competitors[0];
@@ -141,6 +143,82 @@ All weights should sum to approximately 1.0.`,
 }
 
 /**
+ * Score an entity against multiple parameters in a single batch
+ * Reduces OpenAI calls from O(Parameters) to O(1) per entity
+ */
+export async function batchScoreEntity(
+  entityName: string,
+  entityType: 'user_app' | 'competitor',
+  featuresSummary: string,
+  parameters: ComparisonParameter[]
+): Promise<{ parameterId: string; score: number; reasoning: string }[]> {
+  try {
+    const parametersList = parameters.map((p, i) =>
+      `${i + 1}. ${p.parameterName}: ${p.parameterDescription}`
+    ).join('\n');
+
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o',
+      messages: [
+        {
+          role: 'system',
+          content: 'You are evaluating apps on specific criteria. Provide objective scores with reasoning.',
+        },
+        {
+          role: 'user',
+          content: `Evaluate: ${entityName}
+Parameters to score on:
+${parametersList}
+
+${entityType === 'user_app' ? 'User\'s features' : 'Competitor features'} (grouped by normalized capabilities):
+${featuresSummary}
+
+Score this app on EACH parameter from 0-10:
+- 0-3: Poor/Missing
+- 4-6: Average/Moderate
+- 7-8: Good/Strong
+- 9-10: Excellent/Best-in-class
+
+Return JSON with a "scores" array containing an object for each parameter:
+{
+  "scores": [
+    {
+      "parameterName": "name from list",
+      "score": X.X,
+      "reasoning": "brief explanation"
+    }
+  ]
+}`,
+        },
+      ],
+      temperature: 0.3,
+      response_format: { type: 'json_object' },
+    });
+
+    const content = response.choices[0].message.content || '{"scores":[]}';
+    const result = JSON.parse(content) as { scores: { parameterName: string; score: number; reasoning: string }[] };
+    const scoresMap = new Map(result.scores.map((s) => [s.parameterName, s]));
+
+    return parameters.map(p => {
+      const s = scoresMap.get(p.parameterName);
+      return {
+        parameterId: p.id,
+        score: Math.min(10, Math.max(0, s?.score ?? 5.0)),
+        reasoning: s?.reasoning || 'Score based on feature analysis',
+      };
+    });
+  } catch (error) {
+    console.error(`Error batch scoring ${entityType}:`, error);
+    return parameters.map(p => ({
+      parameterId: p.id,
+      score: 5.0,
+      reasoning: 'Default score due to analysis error',
+    }));
+  }
+}
+
+/**
+ * DEPRECATED: Use batchScoreEntity instead for better performance
  * Score an entity (user app or competitor) on a specific parameter
  */
 export async function scoreEntities(
@@ -153,10 +231,15 @@ export async function scoreEntities(
   analysisId: string
 ): Promise<FeatureScoreData> {
   try {
+    // Fetch normalized groups for this analysis
+    const normalizedGroups = await prisma.normalizedFeatureGroup.findMany({
+      where: { analysisId },
+    });
+
     // Get normalized feature summary
     const features = entityType === 'user_app'
-      ? await getNormalizedFeatureSummary(userFeatures, analysisId)
-      : await getNormalizedFeatureSummary(competitorFeatures, analysisId);
+      ? await getNormalizedFeatureSummary(userFeatures, normalizedGroups)
+      : await getNormalizedFeatureSummary(competitorFeatures, normalizedGroups);
 
     const entityName = entityType === 'user_app' ? 'User\'s App' : 'Competitor';
 
