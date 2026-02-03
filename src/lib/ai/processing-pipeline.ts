@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/db/prisma';
 import { searchCompetitors, enrichCompetitorData } from './competitor-search';
-import { generateComparisonParameters, scoreEntities } from './feature-analysis';
+import { generateComparisonParameters, batchScoreEntity, getNormalizedFeatureSummary } from './feature-analysis';
 import { analyzeGaps, discoverBlueOcean } from './gap-analysis';
 import { prioritizeFeatures } from './mvp-scoper';
 import { generatePersonas, generateSimulatedReviews } from './persona-generator';
@@ -53,8 +53,8 @@ export async function processAnalysis(analysisId: string): Promise<void> {
       )
     );
 
-    // Enrich competitor data with features
-    for (const competitor of savedCompetitors) {
+    // Enrich competitor data with features in parallel
+    await Promise.all(savedCompetitors.map(async (competitor) => {
       const enrichedData = await enrichCompetitorData(competitor.name, competitor.description || '');
 
       await prisma.competitorFeature.createMany({
@@ -75,7 +75,7 @@ export async function processAnalysis(analysisId: string): Promise<void> {
           marketPosition: enrichedData.market_position || competitor.marketPosition,
         },
       });
-    }
+    }));
 
     await updateStage(analysisId, 'competitors_complete');
 
@@ -173,66 +173,51 @@ export async function processAnalysis(analysisId: string): Promise<void> {
       )
     );
 
-    // Score each entity for each parameter
+    // Fetch normalized groups once from DB for summary generation
+    const dbNormalizedGroups = await prisma.normalizedFeatureGroup.findMany({
+      where: { analysisId },
+    });
+
+    // Score entities in batches (one OpenAI call per entity instead of one per score)
     const totalScores = savedParameters.length * (1 + competitorsWithFeatures.length);
     let completedScores = 0;
 
-    for (const parameter of savedParameters) {
-      // Score user's app
-      const userScore = await scoreEntities(
-        parameter.parameterName,
-        parameter.parameterDescription || '',
-        'user_app',
-        null,
-        analysis.userFeatures,
-        [],
-        analysisId
-      );
+    // 1. Batch score user's app
+    const userSummary = await getNormalizedFeatureSummary(analysis.userFeatures, dbNormalizedGroups);
+    const userScores = await batchScoreEntity(analysis.appName, 'user_app', userSummary, savedParameters);
 
-      await prisma.featureMatrixScore.create({
-        data: {
+    await prisma.featureMatrixScore.createMany({
+      data: userScores.map(s => ({
+        analysisId,
+        parameterId: s.parameterId,
+        entityType: 'user_app',
+        entityId: null,
+        score: s.score,
+        reasoning: s.reasoning,
+      })),
+    });
+
+    completedScores += savedParameters.length;
+    await updateStage(analysisId, `matrix_progress_${completedScores}/${totalScores}`);
+
+    // 2. Batch score each competitor
+    for (const competitor of competitorsWithFeatures) {
+      const compSummary = await getNormalizedFeatureSummary(competitor.features, dbNormalizedGroups);
+      const compScores = await batchScoreEntity(competitor.name, 'competitor', compSummary, savedParameters);
+
+      await prisma.featureMatrixScore.createMany({
+        data: compScores.map(s => ({
           analysisId,
-          parameterId: parameter.id,
-          entityType: 'user_app',
-          entityId: null,
-          score: userScore.score,
-          reasoning: userScore.reasoning,
-        },
+          parameterId: s.parameterId,
+          entityType: 'competitor',
+          entityId: competitor.id,
+          score: s.score,
+          reasoning: s.reasoning,
+        })),
       });
 
-      completedScores++;
-      if (completedScores % 10 === 0) {
-        await updateStage(analysisId, `matrix_progress_${completedScores}/${totalScores}`);
-      }
-
-      // Score each competitor
-      for (const competitor of competitorsWithFeatures) {
-        const competitorScore = await scoreEntities(
-          parameter.parameterName,
-          parameter.parameterDescription || '',
-          'competitor',
-          competitor.id,
-          [],
-          competitor.features,
-          analysisId
-        );
-
-        await prisma.featureMatrixScore.create({
-          data: {
-            analysisId,
-            parameterId: parameter.id,
-            entityType: 'competitor',
-            entityId: competitor.id,
-            score: competitorScore.score,
-            reasoning: competitorScore.reasoning,
-          },
-        });
-
-        completedScores++;
-        if (completedScores % 10 === 0) {
-          await updateStage(analysisId, `matrix_progress_${completedScores}/${totalScores}`);
-        }
-      }
+      completedScores += savedParameters.length;
+      await updateStage(analysisId, `matrix_progress_${completedScores}/${totalScores}`);
     }
 
     await updateStage(analysisId, 'matrix_complete');
