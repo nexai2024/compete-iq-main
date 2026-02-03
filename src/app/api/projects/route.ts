@@ -28,6 +28,22 @@ export async function POST(request: NextRequest) {
     const { projectId, name, data } = body;
 
     if (projectId) {
+      // Verify ownership before update (IDOR protection)
+      const existingProject = await prisma.project.findUnique({
+        where: { id: projectId },
+      });
+
+      if (!existingProject) {
+        return NextResponse.json({ error: 'Project not found' }, { status: 404 });
+      }
+
+      if (existingProject.userId !== userId) {
+        return NextResponse.json(
+          { error: 'Access denied - project belongs to another user' },
+          { status: 403 }
+        );
+      }
+
       const project = await prisma.project.update({
         where: { id: projectId },
         data: { name, data },
