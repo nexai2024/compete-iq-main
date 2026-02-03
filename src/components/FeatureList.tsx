@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { X, Plus } from 'lucide-react';
 import { Input } from './ui/Input';
 import { Textarea } from './ui/Textarea';
@@ -19,6 +19,20 @@ export interface FeatureListProps {
 }
 
 export const FeatureList: React.FC<FeatureListProps> = ({ features, onChange, errors = {} }) => {
+  const prevLength = useRef(features.length);
+  const inputRefs = useRef<Map<string, HTMLInputElement>>(new Map());
+
+  useEffect(() => {
+    if (features.length > prevLength.current) {
+      const lastFeature = features[features.length - 1];
+      const input = inputRefs.current.get(lastFeature.id);
+      if (input) {
+        input.focus();
+      }
+    }
+    prevLength.current = features.length;
+  }, [features]);
+
   const addFeature = () => {
     if (features.length >= 50) return;
 
@@ -70,6 +84,13 @@ export const FeatureList: React.FC<FeatureListProps> = ({ features, onChange, er
 
             <div className="space-y-3">
               <Input
+                ref={(el) => {
+                  if (el) {
+                    inputRefs.current.set(feature.id, el);
+                  } else {
+                    inputRefs.current.delete(feature.id);
+                  }
+                }}
                 placeholder="e.g., Real-time collaboration"
                 value={feature.name}
                 onChange={(e) => updateFeature(feature.id, 'name', e.target.value)}
