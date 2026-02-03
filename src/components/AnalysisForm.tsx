@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useId } from 'react';
 import { useRouter } from 'next/navigation';
 import { Github, Loader2 } from 'lucide-react';
 import { Input } from './ui/Input';
 import { Textarea } from './ui/Textarea';
 import { Button } from './ui/Button';
 import { FeatureList, Feature } from './FeatureList';
+import { useToast } from './ui/Toast';
 import { createAnalysisSchema } from '@/lib/utils/validation';
 import type { CreateAnalysisRequest, ProjectData } from '@/types/api';
 
@@ -14,6 +15,8 @@ type ProjectListItem = { id: string; name?: string; data: ProjectData; updatedAt
 
 export const AnalysisForm: React.FC = () => {
   const router = useRouter();
+  const projectIdSelectId = useId();
+  const { addToast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [serverError, setServerError] = useState<string>('');
@@ -23,6 +26,7 @@ export const AnalysisForm: React.FC = () => {
   const [projects, setProjects] = useState<ProjectListItem[]>([]);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [lastSavedAt, setLastSavedAt] = useState<number | null>(null);
+  const [now, setNow] = useState<number>(0);
 
   // Form state
   const [appName, setAppName] = useState('');
@@ -155,6 +159,14 @@ export const AnalysisForm: React.FC = () => {
     fetchProjects();
   }, [fetchProjects]);
 
+  useEffect(() => {
+    setNow(Date.now());
+    const interval = setInterval(() => {
+      setNow(Date.now());
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
   const loadProject = (p: ProjectListItem) => {
     setProjectId(p.id);
     setAppName(p.data.appName || '');
@@ -245,6 +257,12 @@ export const AnalysisForm: React.FC = () => {
         setGithubUrl('');
         setGithubToken('');
         setShowGitHubImport(false);
+
+        addToast({
+          type: 'success',
+          title: 'Import Successful',
+          message: 'Your project details have been imported from GitHub.',
+        });
       }
     } catch (error) {
       console.error('Error importing from GitHub:', error);
@@ -414,8 +432,9 @@ export const AnalysisForm: React.FC = () => {
       {/* Projects picker + save status */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-2">
-          <label className="text-sm text-gray-600">Saved Projects</label>
+          <label htmlFor={projectIdSelectId} className="text-sm text-gray-600">Saved Projects</label>
           <select
+            id={projectIdSelectId}
             value={projectId || ''}
             onChange={(e) => {
               const id = e.target.value;
@@ -436,7 +455,7 @@ export const AnalysisForm: React.FC = () => {
         <div className="text-sm text-gray-500">
           {saveStatus === 'saving' && <span>Saving…</span>}
           {saveStatus === 'saved' && lastSavedAt && (
-            <span>Saved {Math.round((Date.now() - lastSavedAt) / 1000)}s ago</span>
+            <span>Saved {Math.max(0, Math.round((now - lastSavedAt) / 1000))}s ago</span>
           )}
           {saveStatus === 'error' && <span className="text-red-600">Error saving</span>}
         </div>
