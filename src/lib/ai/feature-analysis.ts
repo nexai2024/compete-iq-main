@@ -1,6 +1,6 @@
 import OpenAI from 'openai';
 import { prisma } from '@/lib/db/prisma';
-import type { Analysis, UserFeature, Competitor, CompetitorFeature } from '@/types/database';
+import type { Analysis, UserFeature, Competitor, CompetitorFeature, NormalizedFeatureGroup } from '@/types/database';
 import type { ComparisonParameterData, FeatureScoreData } from '@/types/analysis';
 
 const openai = new OpenAI({
@@ -13,12 +13,16 @@ const openai = new OpenAI({
  */
 async function getNormalizedFeatureSummary(
   features: (UserFeature | CompetitorFeature)[],
-  analysisId: string
+  analysisId: string,
+  preFetchedGroups?: NormalizedFeatureGroup[]
 ): Promise<string> {
-  // Fetch normalized groups for this analysis
-  const normalizedGroups = await prisma.normalizedFeatureGroup.findMany({
+  // Fetch normalized groups for this analysis if not provided
+  const normalizedGroups = preFetchedGroups || await prisma.normalizedFeatureGroup.findMany({
     where: { analysisId },
   });
+
+  // Use Map for O(1) group lookups
+  const groupMap = new Map(normalizedGroups.map(g => [g.id, g]));
 
   // Group features by normalized group
   const groupedFeatures = new Map<string, (UserFeature | CompetitorFeature)[]>();
@@ -28,7 +32,7 @@ async function getNormalizedFeatureSummary(
     // Type guard to check if feature has normalizedGroupId
     const normalizedGroupId = 'normalizedGroupId' in feature ? feature.normalizedGroupId : null;
     if (normalizedGroupId) {
-      const group = normalizedGroups.find((g: { id: string }) => g.id === normalizedGroupId);
+      const group = groupMap.get(normalizedGroupId);
       if (group) {
         const groupName = group.canonicalName;
         if (!groupedFeatures.has(groupName)) {
@@ -150,13 +154,14 @@ export async function scoreEntities(
   entityId: string | null,
   userFeatures: UserFeature[],
   competitorFeatures: CompetitorFeature[],
-  analysisId: string
+  analysisId: string,
+  preFetchedGroups?: NormalizedFeatureGroup[]
 ): Promise<FeatureScoreData> {
   try {
     // Get normalized feature summary
     const features = entityType === 'user_app'
-      ? await getNormalizedFeatureSummary(userFeatures, analysisId)
-      : await getNormalizedFeatureSummary(competitorFeatures, analysisId);
+      ? await getNormalizedFeatureSummary(userFeatures, analysisId, preFetchedGroups)
+      : await getNormalizedFeatureSummary(competitorFeatures, analysisId, preFetchedGroups);
 
     const entityName = entityType === 'user_app' ? 'User\'s App' : 'Competitor';
 

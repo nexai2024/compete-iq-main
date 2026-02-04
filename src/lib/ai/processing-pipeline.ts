@@ -173,6 +173,11 @@ export async function processAnalysis(analysisId: string): Promise<void> {
       )
     );
 
+    // Fetch normalized groups once for all scoring calls to avoid N+1 queries
+    const dbNormalizedGroups = await prisma.normalizedFeatureGroup.findMany({
+      where: { analysisId },
+    });
+
     // Score each entity for each parameter
     const totalScores = savedParameters.length * (1 + competitorsWithFeatures.length);
     let completedScores = 0;
@@ -186,7 +191,8 @@ export async function processAnalysis(analysisId: string): Promise<void> {
         null,
         analysis.userFeatures,
         [],
-        analysisId
+        analysisId,
+        dbNormalizedGroups
       );
 
       await prisma.featureMatrixScore.create({
@@ -214,7 +220,8 @@ export async function processAnalysis(analysisId: string): Promise<void> {
           competitor.id,
           [],
           competitor.features,
-          analysisId
+          analysisId,
+          dbNormalizedGroups
         );
 
         await prisma.featureMatrixScore.create({
