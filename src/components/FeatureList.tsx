@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import { X, Plus } from 'lucide-react';
 import { Input } from './ui/Input';
 import { Textarea } from './ui/Textarea';
@@ -19,6 +19,16 @@ export interface FeatureListProps {
 }
 
 export const FeatureList: React.FC<FeatureListProps> = ({ features, onChange, errors = {} }) => {
+  const lastInputRef = useRef<HTMLInputElement>(null);
+  const prevLength = useRef(features.length);
+
+  useEffect(() => {
+    if (features.length > prevLength.current) {
+      lastInputRef.current?.focus();
+    }
+    prevLength.current = features.length;
+  }, [features.length]);
+
   const addFeature = () => {
     if (features.length >= 50) return;
 
@@ -62,14 +72,15 @@ export const FeatureList: React.FC<FeatureListProps> = ({ features, onChange, er
                 onClick={() => removeFeature(feature.id)}
                 disabled={features.length <= 1}
                 className="text-gray-400 hover:text-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                aria-label="Remove feature"
+                aria-label={`Remove Feature ${index + 1}`}
               >
-                <X className="w-5 h-5" />
+                <X className="w-5 h-5" aria-hidden="true" />
               </button>
             </div>
 
             <div className="space-y-3">
               <Input
+                ref={index === features.length - 1 ? lastInputRef : null}
                 placeholder="e.g., Real-time collaboration"
                 value={feature.name}
                 onChange={(e) => updateFeature(feature.id, 'name', e.target.value)}
@@ -97,7 +108,7 @@ export const FeatureList: React.FC<FeatureListProps> = ({ features, onChange, er
         disabled={features.length >= 50}
         className="w-full"
       >
-        <Plus className="w-4 h-4 mr-2" />
+        <Plus className="w-4 h-4 mr-2" aria-hidden="true" />
         Add Feature
       </Button>
 
