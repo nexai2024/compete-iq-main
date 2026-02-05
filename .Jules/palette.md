@@ -1,0 +1,3 @@
+## 2025-05-14 - Robust Auto-focus in Dynamic Lists
+**Learning:** When implementing auto-focus for newly added items in a dynamic React list, using a simple `querySelectorAll('input')` can be brittle if items have multiple inputs. A more robust approach is to tag the item container with a data attribute (e.g., `data-feature-row`) and use `lastRow.querySelector('input')` to specifically target the primary input of the new row.
+**Action:** Use `data-` attributes to mark logical component boundaries in the DOM when coordination between React state and imperative DOM methods (like `.focus()`) is required.

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useId } from 'react';
 import { useRouter } from 'next/navigation';
 import { Github, Loader2 } from 'lucide-react';
 import { Input } from './ui/Input';
@@ -14,6 +14,7 @@ type ProjectListItem = { id: string; name?: string; data: ProjectData; updatedAt
 
 export const AnalysisForm: React.FC = () => {
   const router = useRouter();
+  const projectsSelectId = useId();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [serverError, setServerError] = useState<string>('');
@@ -23,6 +24,15 @@ export const AnalysisForm: React.FC = () => {
   const [projects, setProjects] = useState<ProjectListItem[]>([]);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [lastSavedAt, setLastSavedAt] = useState<number | null>(null);
+  const [now, setNow] = useState(Date.now());
+
+  // Update "now" every second for live timer feedback
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setNow(Date.now());
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   // Form state
   const [appName, setAppName] = useState('');
@@ -414,15 +424,18 @@ export const AnalysisForm: React.FC = () => {
       {/* Projects picker + save status */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-2">
-          <label className="text-sm text-gray-600">Saved Projects</label>
+          <label htmlFor={projectsSelectId} className="text-sm text-gray-600 cursor-pointer">
+            Saved Projects
+          </label>
           <select
+            id={projectsSelectId}
             value={projectId || ''}
             onChange={(e) => {
               const id = e.target.value;
               const selected = projects.find((p) => p.id === id);
               if (selected) loadProject(selected);
             }}
-            className="border rounded p-2"
+            className="border rounded p-2 focus:ring-2 focus:ring-blue-500 outline-none"
           >
             <option value="">-- Select project --</option>
             {projects.map((p) => (
@@ -433,10 +446,10 @@ export const AnalysisForm: React.FC = () => {
           </select>
         </div>
 
-        <div className="text-sm text-gray-500">
+        <div className="text-sm text-gray-500" aria-live="polite">
           {saveStatus === 'saving' && <span>Saving…</span>}
           {saveStatus === 'saved' && lastSavedAt && (
-            <span>Saved {Math.round((Date.now() - lastSavedAt) / 1000)}s ago</span>
+            <span>Saved {Math.max(0, Math.round((now - lastSavedAt) / 1000))}s ago</span>
           )}
           {saveStatus === 'error' && <span className="text-red-600">Error saving</span>}
         </div>

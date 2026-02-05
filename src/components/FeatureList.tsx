@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { X, Plus } from 'lucide-react';
 import { Input } from './ui/Input';
 import { Textarea } from './ui/Textarea';
@@ -19,6 +19,24 @@ export interface FeatureListProps {
 }
 
 export const FeatureList: React.FC<FeatureListProps> = ({ features, onChange, errors = {} }) => {
+  const prevFeaturesLength = useRef(features.length);
+  const listRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (features.length > prevFeaturesLength.current && listRef.current) {
+      // Focus the name input of the newly added feature row
+      const rows = listRef.current.querySelectorAll('[data-feature-row]');
+      const lastRow = rows[rows.length - 1];
+      if (lastRow) {
+        const nameInput = lastRow.querySelector('input');
+        if (nameInput) {
+          nameInput.focus();
+        }
+      }
+    }
+    prevFeaturesLength.current = features.length;
+  }, [features.length]);
+
   const addFeature = () => {
     if (features.length >= 50) return;
 
@@ -42,7 +60,7 @@ export const FeatureList: React.FC<FeatureListProps> = ({ features, onChange, er
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4" ref={listRef}>
       <div className="flex justify-between items-center">
         <label className="block text-sm font-medium text-gray-700">
           Feature List <span className="text-red-500">*</span>
@@ -54,7 +72,7 @@ export const FeatureList: React.FC<FeatureListProps> = ({ features, onChange, er
 
       <div className="space-y-6">
         {features.map((feature, index) => (
-          <div key={feature.id} className="relative border border-gray-200 rounded-lg p-4 bg-gray-50">
+          <div key={feature.id} data-feature-row className="relative border border-gray-200 rounded-lg p-4 bg-gray-50">
             <div className="flex justify-between items-start mb-3">
               <span className="text-sm font-medium text-gray-600">Feature {index + 1}</span>
               <button
@@ -62,9 +80,9 @@ export const FeatureList: React.FC<FeatureListProps> = ({ features, onChange, er
                 onClick={() => removeFeature(feature.id)}
                 disabled={features.length <= 1}
                 className="text-gray-400 hover:text-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                aria-label="Remove feature"
+                aria-label={`Remove feature ${index + 1}${feature.name ? `: ${feature.name}` : ''}`}
               >
-                <X className="w-5 h-5" />
+                <X className="w-5 h-5" aria-hidden="true" />
               </button>
             </div>
 
@@ -97,7 +115,7 @@ export const FeatureList: React.FC<FeatureListProps> = ({ features, onChange, er
         disabled={features.length >= 50}
         className="w-full"
       >
-        <Plus className="w-4 h-4 mr-2" />
+        <Plus className="w-4 h-4 mr-2" aria-hidden="true" />
         Add Feature
       </Button>
 
