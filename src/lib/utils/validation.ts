@@ -19,6 +19,13 @@ export const sendPersonaMessageSchema = z.object({
   message: z.string().min(1, 'Message cannot be empty').max(1000, 'Message must be less than 1000 characters'),
 });
 
+// Project saving validation
+export const saveProjectSchema = z.object({
+  projectId: z.string().uuid().optional(),
+  name: z.string().min(1, 'Project name is required').max(255),
+  data: z.any(),
+});
+
 // Types inferred from schemas
 export type CreateAnalysisInput = z.infer<typeof createAnalysisSchema>;
 export type FeatureInput = z.infer<typeof featureSchema>;
