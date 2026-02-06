@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { X, Plus } from 'lucide-react';
 import { Input } from './ui/Input';
 import { Textarea } from './ui/Textarea';
@@ -19,6 +19,21 @@ export interface FeatureListProps {
 }
 
 export const FeatureList: React.FC<FeatureListProps> = ({ features, onChange, errors = {} }) => {
+  const prevFeaturesLength = useRef(features.length);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (features.length > prevFeaturesLength.current) {
+      // Feature added, focus the last feature's first input
+      const inputs = containerRef.current?.querySelectorAll('input');
+      if (inputs && inputs.length > 0) {
+        const lastInput = inputs[inputs.length - 1];
+        (lastInput as HTMLInputElement).focus();
+      }
+    }
+    prevFeaturesLength.current = features.length;
+  }, [features.length]);
+
   const addFeature = () => {
     if (features.length >= 50) return;
 
@@ -52,7 +67,7 @@ export const FeatureList: React.FC<FeatureListProps> = ({ features, onChange, er
         </span>
       </div>
 
-      <div className="space-y-6">
+      <div className="space-y-6" ref={containerRef}>
         {features.map((feature, index) => (
           <div key={feature.id} className="relative border border-gray-200 rounded-lg p-4 bg-gray-50">
             <div className="flex justify-between items-start mb-3">
@@ -62,7 +77,7 @@ export const FeatureList: React.FC<FeatureListProps> = ({ features, onChange, er
                 onClick={() => removeFeature(feature.id)}
                 disabled={features.length <= 1}
                 className="text-gray-400 hover:text-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                aria-label="Remove feature"
+                aria-label={`Remove feature ${index + 1}`}
               >
                 <X className="w-5 h-5" />
               </button>
